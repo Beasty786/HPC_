@@ -36,6 +36,33 @@ void printOut(float *p , int y, int x);
 void printMask(float mask[maskDimx*maskDimx]);
 
 void Convolve(int argc , char **argv, float mask[maskDimx*maskDimx]);
+__constant__ float edge[9] = {-1,0,1,-2,0,2,-1,0,1};
+__constant__ float eve[9] = {1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9};
+__constant__ float sharp[9] = {-1,-1,-1,-1,9,-1,-1,-1,-1};
+
+
+__global__ void globalConvolve(float *inIMG, float *outIMG, int width, int height, int DIMx){
+    // the 
+
+    int i = threadIdx.x + blockIdx.x*blockDim.x;
+    int j = threadIdx.y + blockIdx.y*blockDim.y;
+    // unsigned int size = width*height;
+ 
+        float sum = 0.0;
+        int m = (DIMx - 1)/2; // This handles different size mask dimensions i.e 3, 5, 7 etc
+        for(int l = 0; l < DIMx; l++){
+            for(int p = 0; p < DIMx; p++){
+                // y is the value in input
+                // f is the value of the mask at given indices
+                float y, f;
+                y = (i-m+l) < 0 ? 0 : (j-m+p) < 0 ? 0 : (i-m+l)> (height-1) ? 0 : (j-m+p) > (width-1)? 0: inIMG[(i-m+l)*width + (j-m+p)];
+                f = sharp[l*DIMx + p];
+                sum += (f*y) ;
+            }
+        }
+        outIMG[ i*width + j] = sum ;
+    
+}
 
 int main( int argc, char **argv ){
     init();
@@ -43,7 +70,7 @@ int main( int argc, char **argv ){
     printMask(mask2);
     printMask(mask3);
 
-    Convolve(argc, argv, mask1);
+    Convolve(argc, argv, mask2);
     return 0;
 }
 
@@ -67,32 +94,7 @@ void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i
     outputImg[ i*cols + j] = sum ;
 }
 
-__constant__ float edge[9] = {-1,0,1,-2,0,2,-1,0,1};
 
-__global__ void globalConvolve(float *inIMG, float *outIMG, float *mask, int width, int height, int DIMx){
-    // the 
-
-    int i = threadIdx.x + blockIdx.x*blockDim.x;
-    int j = threadIdx.y + blockIdx.y*blockDim.y;
-    // unsigned int size = width*height;
-
-        int L = DIMx; // L is the mask's x-axis dimension 
-        int P = DIMx; // P is the mask's y-axis dimension
-        float sum = 0.0;
-        int m = (DIMx - 1)/2; // This handles different size mask dimensions i.e 3, 5, 7 etc
-        for(int l = 0; l < 3; l++){
-            for(int p = 0; p < 3; p++){
-                // y is the value in input
-                // f is the value of the mask at given indices
-                float y, f;
-                y = (i-m+l) < 0 ? 0 : (j-m+p) < 0 ? 0 : (i-m+l)> (height-1) ? 0 : (j-m+p) > (width-1)? 0: inIMG[(i-m+l)*width + (j-m+p)];
-                f = edge[l*DIMx + p];
-                sum += (f*y) ;
-            }
-        }
-        outIMG[ i*width + j] = sum ;
-    
-}
 
 void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
 
@@ -125,30 +127,29 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     
     
     
-    float *gInputImg , *gOutputImg, *gMask, *out;
-    out = (float*) malloc(size);
+    float *gInputImg , *gOutputImg, out[size];
+    // out = (float*) malloc(size);
     
     checkCudaErrors(cudaMalloc((void**)&gInputImg , size));
     checkCudaErrors(cudaMalloc((void**)&gOutputImg , size));
-    checkCudaErrors(cudaMalloc((void**)&gMask, maskDimx*maskDimx*sizeof(float)));
+    // checkCudaErrors(cudaMalloc((void**)&gMask, maskDimx*maskDimx*sizeof(float)));
     checkCudaErrors(cudaMemcpy(gInputImg, inputImg , size, cudaMemcpyHostToDevice));
 
     dim3 grids(8,8);
     dim3 threads(64,64);
 
-    globalConvolve<<<grids,threads>>>(gInputImg, gOutputImg, gMask,  width,  height,  maskDimx);
+    globalConvolve<<<grids,threads>>>(gInputImg, gOutputImg,   width,  height,  maskDimx);
 
     checkCudaErrors(cudaMemcpy(out, gOutputImg, size, cudaMemcpyDeviceToHost));
     cudaFree(gInputImg);
     cudaFree(gOutputImg);
-    cudaFree(gMask);
     char outputFilenames[1024];
     strcpy(outputFilenames, imagePath);
-    strcpy(outputFilenames + strlen(imagePath) - 4, "__par_out.pgm");
+    strcpy(outputFilenames + strlen(imagePath) - 4, "_Global_out.pgm");
     sdkSavePGM(outputFilenames, out, width, height);
     printf("Wrote '%s'\n", outputFilenames);
     
-    free(out);
+    // free(out);
 
 }
 
@@ -176,8 +177,8 @@ void printOut(float *p , int width, int height){
     int rows = height;
     int cols = width;
     printf("rows = %d, cols = %d\n", rows, cols);
-    for(int i = 0; i < rows; i++){
-        for(int j = 0; j < cols; j++){
+    for(int i = 0; i < 5; i++){
+        for(int j = 0; j < 5; j++){
             printf("%f ", p[i*cols + j]);
         }
         printf("\n");
