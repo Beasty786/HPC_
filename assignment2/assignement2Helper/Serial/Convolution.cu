@@ -90,7 +90,7 @@ void Convolve(int argc , char **argv){
     for(int k = 0; k < width * height; k++){
         int i = k/width;
         int j = k - (i*width);
-        maskingFunc(hData, outputImg, width , height, i , j , 3, mask3);
+        maskingFunc(hData, outputImg, width , height, i , j , 3, mask2);
     }
     // printf("%f\n",outputImg[q]);
 
@@ -116,7 +116,7 @@ void init(){
             mask3[i][j] = (j == 0 && i != 1)?-1:(j == 0 && i == 1)? -2:(j == 2 && i != 1)?1:(j == 2 && i == 1)? 2:0; // edge
         }
     }
-    mask2[1][1] = 9;
+    mask2[1][1] = 8;
     
 
 }
