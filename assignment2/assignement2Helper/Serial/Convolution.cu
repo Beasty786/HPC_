@@ -62,7 +62,7 @@ void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i
         }
     }
     // if(i== 0 && j==0) printf("the sum is %f\n",sum);
-    outputImg[ i*cols + j] = sum - inputImg[i*cols +j];
+    outputImg[ i*cols + j] = sum ;
 }
 
 void Convolve(int argc , char **argv){
