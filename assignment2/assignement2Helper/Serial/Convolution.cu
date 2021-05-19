@@ -75,7 +75,6 @@ __global__ void globalConvolve(float *inIMG, float *outIMG, float *mask, int wid
     int j = threadIdx.y + blockIdx.y*blockDim.y;
     // unsigned int size = width*height;
 
-    if(i<height && j < width){
         int L = DIMx; // L is the mask's x-axis dimension 
         int P = DIMx; // P is the mask's y-axis dimension
         float sum = 0.0;
@@ -91,7 +90,7 @@ __global__ void globalConvolve(float *inIMG, float *outIMG, float *mask, int wid
             }
         }
         outIMG[ i*width + j] = sum ;
-    }
+    
 }
 
 void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
@@ -144,10 +143,11 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     cudaFree(gMask);
     char outputFilenames[1024];
     strcpy(outputFilenames, imagePath);
-    strcpy(outputFilenames + strlen(imagePath) - 4, "par_out.pgm");
+    strcpy(outputFilenames + strlen(imagePath) - 4, "__par_out.pgm");
     sdkSavePGM(outputFilenames, out, width, height);
     printf("Wrote '%s'\n", outputFilenames);
     
+    free(out);
 
 }
 
