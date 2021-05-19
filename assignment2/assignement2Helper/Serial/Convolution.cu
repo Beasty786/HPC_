@@ -12,14 +12,17 @@
 // below these are for testing purposes
 float input[DIMx][DIMy];
 float output[DIMx][DIMy];
-float mask[3][3];
+float mask1[3][3];
+float mask2[3][3];
+float mask3[3][3];
+
 
 // l and p are the rows and colums of the mask respectively
 // i and j are the coordinates of input data point we want to mask for 
 void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i, int j, int maskDimx);
 
 // Define the files that are to be save and the reference images for validation
-const char *imageFilename = "lena_bw.pgm";
+const char *imageFilename = "mandrill.pgm";
 const char *refFilename   = "ref_rotated.pgm";
 
 const char *sampleName = "simpleTexture";
@@ -28,14 +31,16 @@ const char *sampleName = "simpleTexture";
 //TESTING FUNCTIONS
 void init();
 void printOut(float *p , int y, int x);
-void printMask();
+void printMask(float mask[3][3]);
 
 void Convolve(int argc , char **argv);
 
 int main( int argc, char **argv ){
     init();
     // printOut(input , DIMy, DIMx);
-    printMask();
+    printMask(mask1);
+    printMask(mask2);
+
 
     // for(int i = 0; i < DIMy; i++){
     //     for(int j = 0; j < DIMx; j++){
@@ -62,7 +67,7 @@ void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i
             // f is the value of the mask at given indices
             float y, f;
             y = (i-m+l) < 0 ? 0 : (j-m+p) < 0 ? 0 : (i-m+l)> (rows-1) ? 0 : (j-m+p) > (cols-1)? 0: inputImg[(i-m+l)*cols + (j-m+p)];
-            f = mask[l][p];
+            f = mask2[l][p];
             sum += (f*y) ;
         }
     }
@@ -97,7 +102,7 @@ void Convolve(int argc , char **argv){
         int j = k - (i*width);
         maskingFunc(hData, outputImg, width , height, i , j , 3);
     }
-    printf("%f\n",outputImg[q]);
+    // printf("%f\n",outputImg[q]);
 
     // outputfileName
     char outputFilename[1024];
@@ -116,10 +121,11 @@ void init(){
     // for the input
     for(int i = 0; i < 3; i++){
         for(int j = 0; j< 3; j++){
-            mask[i][j] = (float) 1/9;
+            mask1[i][j] = (float) 1/9;
+            mask2[i][j] = -1;
         }
     }
-    // mask[1][1] = 9;
+    mask2[1][1] = 9;
     
 
 }
@@ -140,10 +146,10 @@ void printOut(float *p , int width, int height){
 }
 
 // Prints a mask
-void printMask(){
+void printMask(float mask[3][3]){
     for(int i = 0; i < 3; i++){
         for(int j = 0; j < 3; j++){
-            printf("%f ",(float) mask[j][i]);
+            printf("%f ",mask[j][i]);
         }
         printf("\n");
     }
