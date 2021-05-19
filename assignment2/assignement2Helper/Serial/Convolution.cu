@@ -35,7 +35,7 @@ void Convolve(int argc , char **argv);
 int main( int argc, char **argv ){
     init();
     // printOut(input , DIMy, DIMx);
-    // printMask();
+    printMask();
 
     // for(int i = 0; i < DIMy; i++){
     //     for(int j = 0; j < DIMx; j++){
@@ -61,7 +61,8 @@ void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i
             // y is the value in input
             // f is the value of the mask at given indices
             float y, f;
-            y = (i-m+l) < 0 ? 0 : (j-m+p) < 0 ? 0 : (i-m+l)> (DIMx-1) ? 0 : (j-m+p) > (DIMy-1)? 0: inputImg[(i-m+l)*cols + (j-m+p)];
+            y = (i-m+l) < 0 ? 0 : (j-m+p) < 0 ? 0 : (i-m+l)> (rows-1) ? 0 : (j-m+p) > (cols-1)? 0: inputImg[(i-m+l)*512 + (j-m+p)];
+            // printf("sum: %d\n",(i-m+l) < 0 ? 0 : (j-m+p) < 0 ? 0 : (i-m+l)> (rows-1) ? 0 : (j-m+p) > (cols-1)? 0:(i-m+l)*512 + (j-m+p));
             f = mask[l][p];
             sum += (f*y) ;
         }
@@ -76,6 +77,7 @@ void Convolve(int argc , char **argv){
     float *hData = NULL;
     unsigned int width , height;
 
+    int q = 512*511;
     char* imagePath = sdkFindFilePath(imageFilename, argv[0]);
     
     if(imagePath == NULL){
@@ -86,7 +88,7 @@ void Convolve(int argc , char **argv){
     sdkLoadPGM(imagePath, &hData, &width, &height);
     unsigned int size = width * height * sizeof(float);
     printf("Loaded '%s', %d x %d pixels\nand size is %d\n",imageFilename, width, height,size);
-    printf("%f\n",hData[0]);
+    printf("%f\n",hData[q]);
     // printOut(hData, width, height);
 
     float *outputImg = (float *) malloc(size);
@@ -96,7 +98,7 @@ void Convolve(int argc , char **argv){
         int j = k - (i*width);
         maskingFunc(hData, outputImg, width , height, i , j , 3);
     }
-    printf("%f\n",outputImg[0]);
+    printf("%f\n",outputImg[q]);
 
     // outputfileName
     char outputFilename[1024];
@@ -111,20 +113,16 @@ void Convolve(int argc , char **argv){
 // Initialises a 5 by 5 matrix to be masked and a mask
 void init(){
     // for the mask
-    mask[0][0] = 4; mask[2][2] = -4;
 
     // for the input
-    for(int i = 1; i < 3; i++){
-        for(int j = 1; j< 3; j++){
+    for(int i = 0; i < 3; i++){
+        for(int j = 0; j< 3; j++){
             mask[j][i] = -1;
         }
     }
     mask[1][1] = 9;
     
 
-    input[1][4] = 0;
-    input[2][4] = 1;
-    input[4][2] = 1;
 }
 
 // prints the output picture
