@@ -5,7 +5,7 @@
 #include <helper_functions.h>
 #include <helper_cuda.h>
 
-#define maskDimx 3
+#define maskDimx 5
 
 // input and mask are globals
 // below these are for testing purposes
@@ -19,7 +19,7 @@ float mask3[maskDimx*maskDimx]; // edging
 void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i, int j, float mask[maskDimx*maskDimx]);
 
 // Define the files that are to be save and the reference images for validation
-const char *imageFilename = "ref_rotated.pgm";
+const char *imageFilename = "man.pgm";
 const char *refFilename   = "ref_rotated.pgm";
 
 const char *sampleName = "simpleTexture";
@@ -57,7 +57,7 @@ void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i
             // f is the value of the mask at given indices
             float y, f;
             y = (i-m+l) < 0 ? 0 : (j-m+p) < 0 ? 0 : (i-m+l)> (rows-1) ? 0 : (j-m+p) > (cols-1)? 0: inputImg[(i-m+l)*cols + (j-m+p)];
-            f = mask[l*maskDimx +p];
+            f = mask[l*maskDimx + p];
             sum += (f*y) ;
         }
     }
