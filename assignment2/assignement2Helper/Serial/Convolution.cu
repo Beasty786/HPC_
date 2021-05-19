@@ -7,7 +7,7 @@
 #include "../inc/common/book.h"
 
 
-#define maskDimx 5
+#define maskDimx 3
 
 // input and mask are globals
 // below these are for testing purposes
@@ -144,7 +144,7 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     cudaFree(gMask);
     char outputFilenames[1024];
     strcpy(outputFilenames, imagePath);
-    strcpy(outputFilenames + strlen(imagePath) - 4, "_par_out.pgm");
+    strcpy(outputFilenames + strlen(imagePath) - 4, "par_out.pgm");
     sdkSavePGM(outputFilenames, out, width, height);
     printf("Wrote '%s'\n", outputFilenames);
     
