@@ -12,7 +12,7 @@
 // below these are for testing purposes
 float input[DIMx][DIMy];
 float output[DIMx][DIMy];
-int mask[3][3];
+float mask[3][3];
 
 // l and p are the rows and colums of the mask respectively
 // i and j are the coordinates of input data point we want to mask for 
@@ -116,10 +116,10 @@ void init(){
     // for the input
     for(int i = 0; i < 3; i++){
         for(int j = 0; j< 3; j++){
-            mask[j][i] = -1;
+            mask[i][j] = (float) 1/9;
         }
     }
-    mask[1][1] = 9;
+    // mask[1][1] = 9;
     
 
 }
@@ -143,7 +143,7 @@ void printOut(float *p , int width, int height){
 void printMask(){
     for(int i = 0; i < 3; i++){
         for(int j = 0; j < 3; j++){
-            printf("%d ", mask[j][i]);
+            printf("%f ",(float) mask[j][i]);
         }
         printf("\n");
     }
