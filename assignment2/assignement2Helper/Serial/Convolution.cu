@@ -22,7 +22,7 @@ float mask3[3][3]; // edging
 void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i, int j, int maskDimx,float mask[3][3]);
 
 // Define the files that are to be save and the reference images for validation
-const char *imageFilename = "mandrill.pgm";
+const char *imageFilename = "ref_rotated.pgm";
 const char *refFilename   = "ref_rotated.pgm";
 
 const char *sampleName = "simpleTexture";
@@ -57,7 +57,7 @@ void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i
             // f is the value of the mask at given indices
             float y, f;
             y = (i-m+l) < 0 ? 0 : (j-m+p) < 0 ? 0 : (i-m+l)> (rows-1) ? 0 : (j-m+p) > (cols-1)? 0: inputImg[(i-m+l)*cols + (j-m+p)];
-            f = mask[l][p];
+            f = mask[p][l];
             sum += (f*y) ;
         }
     }
