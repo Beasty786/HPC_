@@ -22,7 +22,7 @@ float mask3[3][3];
 void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i, int j, int maskDimx);
 
 // Define the files that are to be save and the reference images for validation
-const char *imageFilename = "mandrill.pgm";
+const char *imageFilename = "man.pgm";
 const char *refFilename   = "ref_rotated.pgm";
 
 const char *sampleName = "simpleTexture";
@@ -40,6 +40,7 @@ int main( int argc, char **argv ){
     // printOut(input , DIMy, DIMx);
     printMask(mask1);
     printMask(mask2);
+    printMask(mask3);
 
 
     // for(int i = 0; i < DIMy; i++){
@@ -67,7 +68,7 @@ void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i
             // f is the value of the mask at given indices
             float y, f;
             y = (i-m+l) < 0 ? 0 : (j-m+p) < 0 ? 0 : (i-m+l)> (rows-1) ? 0 : (j-m+p) > (cols-1)? 0: inputImg[(i-m+l)*cols + (j-m+p)];
-            f = mask2[l][p];
+            f = mask3[l][p];
             sum += (f*y) ;
         }
     }
@@ -123,6 +124,7 @@ void init(){
         for(int j = 0; j< 3; j++){
             mask1[i][j] = (float) 1/9;
             mask2[i][j] = -1;
+            mask3[i][j] = (j == 0 && i != 1)?-1:(j == 0 && i == 1)? -2:(j == 2 && i != 1)?1:(j == 2 && i == 1)? 2:0;
         }
     }
     mask2[1][1] = 9;
@@ -149,7 +151,7 @@ void printOut(float *p , int width, int height){
 void printMask(float mask[3][3]){
     for(int i = 0; i < 3; i++){
         for(int j = 0; j < 3; j++){
-            printf("%f ",mask[j][i]);
+            printf("%f ",mask[i][j]);
         }
         printf("\n");
     }
