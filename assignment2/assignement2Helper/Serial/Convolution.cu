@@ -62,7 +62,7 @@ void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i
         }
     }
     // if(i== 0 && j==0) printf("the sum is %f\n",sum);
-    outputImg[ i*cols + j] = sum;
+    outputImg[ i*cols + j] = outputImg[ i*cols + j] - sum;
 }
 
 void Convolve(int argc , char **argv){
@@ -98,7 +98,7 @@ void Convolve(int argc , char **argv){
     char outputFilename[1024];
     strcpy(outputFilename, imagePath);
     strcpy(outputFilename + strlen(imagePath) - 4, "_out.pgm");
-    sdkSavePGM(outputFilename, outputImg, 512, 512);
+    sdkSavePGM(outputFilename, outputImg, width, height);
     printf("Wrote '%s'\n", outputFilename);
 }
 
