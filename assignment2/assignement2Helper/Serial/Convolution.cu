@@ -22,7 +22,7 @@ float mask3[3][3]; // edging
 void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i, int j, int maskDimx,float mask[3][3]);
 
 // Define the files that are to be save and the reference images for validation
-const char *imageFilename = "lena_bw.pgm";
+const char *imageFilename = "mandrill.pgm";
 const char *refFilename   = "ref_rotated.pgm";
 
 const char *sampleName = "simpleTexture";
