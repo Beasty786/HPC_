@@ -22,7 +22,7 @@ float mask3[3][3]; // edging
 void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i, int j, int maskDimx,float mask[3][3]);
 
 // Define the files that are to be save and the reference images for validation
-const char *imageFilename = "ref_rotated.pgm";
+const char *imageFilename = "ref_rotated_out.pgm";
 const char *refFilename   = "ref_rotated.pgm";
 
 const char *sampleName = "simpleTexture";
@@ -90,7 +90,7 @@ void Convolve(int argc , char **argv){
     for(int k = 0; k < width * height; k++){
         int i = k/width;
         int j = k%width;
-        maskingFunc(hData, outputImg, width , height, i , j , 3, mask2);
+        maskingFunc(hData, outputImg, width , height, i , j , 3, mask3);
     }
     // printf("%f\n",outputImg[q]);
 
