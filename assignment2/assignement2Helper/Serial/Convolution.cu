@@ -22,7 +22,7 @@ float mask3[3][3]; // edging
 void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i, int j, int maskDimx,float mask[3][3]);
 
 // Define the files that are to be save and the reference images for validation
-const char *imageFilename = "ref_rotated_out.pgm";
+const char *imageFilename = "mandrill.pgm";
 const char *refFilename   = "ref_rotated.pgm";
 
 const char *sampleName = "simpleTexture";
@@ -41,7 +41,7 @@ int main( int argc, char **argv ){
     printMask(mask2);
     printMask(mask3);
 
-    Convolve(argc, argv);
+    Convolve(argc, argv );
     return 0;
 }
 
@@ -89,7 +89,7 @@ void Convolve(int argc , char **argv){
 
     for(int k = 0; k < width * height; k++){
         int i = k/width;
-        int j = k%width;
+        int j = k - (i*width);
         maskingFunc(hData, outputImg, width , height, i , j , 3, mask3);
     }
     // printf("%f\n",outputImg[q]);
@@ -113,7 +113,7 @@ void init(){
         for(int j = 0; j< 3; j++){
             mask1[i][j] = (float) 1/9; // average
             mask2[i][j] = -1; // sharpening
-            mask3[j][i] = (j == 0 && i != 1)?-1:(j == 0 && i == 1)? -2:(j == 2 && i != 1)?1:(j == 2 && i == 1)? 2:0; // edge
+            mask3[i][j] = (j == 0 && i != 1)?-1:(j == 0 && i == 1)? -2:(j == 2 && i != 1)?1:(j == 2 && i == 1)? 2:0; // edge
         }
     }
     mask2[1][1] = 9;
