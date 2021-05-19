@@ -4,6 +4,8 @@
 #include <cuda_runtime.h>
 #include <helper_functions.h>
 #include <helper_cuda.h>
+#include "../inc/common/book.h"
+
 
 #define maskDimx 5
 
@@ -65,31 +67,33 @@ void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i
     outputImg[ i*cols + j] = sum ;
 }
 
-/*
-__global__ void globalConvolve(float *inIMG, float *outIMG, float *mask, float width, float height, float DIMx){
+
+__global__ void globalConvolve(float *inIMG, float *outIMG, float *mask, int width, int height, int DIMx){
     // the 
 
     int i = threadIdx.x + blockIdx.x*blockDim.x;
     int j = threadIdx.y + blockIdx.y*blockDim.y;
+    // unsigned int size = width*height;
 
-
-    int L = DIMx; // L is the mask's x-axis dimension 
-    int P = DIMx; // P is the mask's y-axis dimension
-    float sum = 0.0;
-    int m = (DIMx - 1)/2; // This handles different size mask dimensions i.e 3, 5, 7 etc
-    for(int l = 0; l < L; l++){
-        for(int p = 0; p < P; p++){
-            // y is the value in input
-            // f is the value of the mask at given indices
-            float y, f;
-            y = (i-m+l) < 0 ? 0 : (j-m+p) < 0 ? 0 : (i-m+l)> (height-1) ? 0 : (j-m+p) > (width-1)? 0: inIMG[(i-m+l)*width + (j-m+p)];
-            f = mask[l*DIMx + p];
-            sum += (f*y) ;
+    if(i<height && j < width){
+        int L = DIMx; // L is the mask's x-axis dimension 
+        int P = DIMx; // P is the mask's y-axis dimension
+        float sum = 0.0;
+        int m = (DIMx - 1)/2; // This handles different size mask dimensions i.e 3, 5, 7 etc
+        for(int l = 0; l < L; l++){
+            for(int p = 0; p < P; p++){
+                // y is the value in input
+                // f is the value of the mask at given indices
+                float y, f;
+                y = (i-m+l) < 0 ? 0 : (j-m+p) < 0 ? 0 : (i-m+l)> (height-1) ? 0 : (j-m+p) > (width-1)? 0: inIMG[(i-m+l)*width + (j-m+p)];
+                f = mask[l*DIMx + p];
+                sum += (f*y) ;
+            }
         }
+        outIMG[ i*width + j] = sum ;
     }
-    outIMG[ i*width + j] = sum ;
 }
-*/
+
 void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
 
    
@@ -118,13 +122,32 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     sdkSavePGM(outputFilename, outputImg, width, height);
     printf("Wrote '%s'\n", outputFilename);
 
-    // float *gInputImg , *gOutputImg, *gMask;
-
     
-    // HANDLE_ERROR(cudaMalloc((void**)&gInputImg , size));
-    // HANDLE_ERROR(cudaMalloc((void**)&gOutputImg , size));
-    // HANDLE_ERROR(cudaMalloc((void**)&gMask, maskDimx*maskDimx*sizeof(float)));
+    
+    
+    float *gInputImg , *gOutputImg, *gMask, *out;
+    out = (float*) malloc(size);
+    
+    HANDLE_ERROR(cudaMalloc((void**)&gInputImg , size));
+    HANDLE_ERROR(cudaMalloc((void**)&gOutputImg , size));
+    HANDLE_ERROR(cudaMalloc((void**)&gMask, maskDimx*maskDimx*sizeof(float)));
+    HANDLE_ERROR(cudaMemcpy(gInputImg, inputImg , size, cudaMemcpyHostToDevice));
 
+    dim3 grids(4,4);
+    dim3 threads(128,128);
+
+    globalConvolve<<<grids,threads>>>(gInputImg, gOutputImg, gMask,  width,  height,  maskDimx);
+
+    HANDLE_ERROR(cudaMemcpy(out, gOutputImg, size, cudaMemcpyDeviceToHost));
+    cudaFree(gInputImg);
+    cudaFree(gOutputImg);
+    cudaFree(gMask);
+    char outputFilenames[1024];
+    strcpy(outputFilenames, imagePath);
+    strcpy(outputFilenames + strlen(imagePath) - 4, "_par_out.pgm");
+    sdkSavePGM(outputFilenames, out, width, height);
+    printf("Wrote '%s'\n", outputFilenames);
+    
 
 }
 
