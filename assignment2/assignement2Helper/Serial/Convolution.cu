@@ -19,7 +19,7 @@ int mask[3][3];
 void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i, int j, int maskDimx);
 
 // Define the files that are to be save and the reference images for validation
-const char *imageFilename = "man.pgm";
+const char *imageFilename = "lena_bw.pgm";
 const char *refFilename   = "ref_rotated.pgm";
 
 const char *sampleName = "simpleTexture";
@@ -61,8 +61,7 @@ void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i
             // y is the value in input
             // f is the value of the mask at given indices
             float y, f;
-            y = (i-m+l) < 0 ? 0 : (j-m+p) < 0 ? 0 : (i-m+l)> (rows-1) ? 0 : (j-m+p) > (cols-1)? 0: inputImg[(i-m+l)*512 + (j-m+p)];
-            // printf("sum: %d\n",(i-m+l) < 0 ? 0 : (j-m+p) < 0 ? 0 : (i-m+l)> (rows-1) ? 0 : (j-m+p) > (cols-1)? 0:(i-m+l)*512 + (j-m+p));
+            y = (i-m+l) < 0 ? 0 : (j-m+p) < 0 ? 0 : (i-m+l)> (rows-1) ? 0 : (j-m+p) > (cols-1)? 0: inputImg[(i-m+l)*cols + (j-m+p)];
             f = mask[l][p];
             sum += (f*y) ;
         }
