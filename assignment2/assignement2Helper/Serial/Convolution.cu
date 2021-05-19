@@ -12,17 +12,17 @@
 // below these are for testing purposes
 float input[DIMx][DIMy];
 float output[DIMx][DIMy];
-float mask1[3][3];
-float mask2[3][3];
-float mask3[3][3];
+float mask1[3][3]; // averaging
+float mask2[3][3]; // sharpening
+float mask3[3][3]; // edging
 
 
 // l and p are the rows and colums of the mask respectively
 // i and j are the coordinates of input data point we want to mask for 
-void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i, int j, int maskDimx);
+void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i, int j, int maskDimx,float mask[3][3]);
 
 // Define the files that are to be save and the reference images for validation
-const char *imageFilename = "man.pgm";
+const char *imageFilename = "lena_bw.pgm";
 const char *refFilename   = "ref_rotated.pgm";
 
 const char *sampleName = "simpleTexture";
@@ -46,7 +46,7 @@ int main( int argc, char **argv ){
 }
 
 // To be called seperately for each block to be masked
-void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i, int j, int maskDimx ){
+void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i, int j, int maskDimx, float mask[3][3] ){
     int L = maskDimx; // L is the mask's x-axis dimension 
     int P = maskDimx; // P is the mask's y-axis dimension
     float sum = 0.0;
@@ -57,7 +57,7 @@ void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i
             // f is the value of the mask at given indices
             float y, f;
             y = (i-m+l) < 0 ? 0 : (j-m+p) < 0 ? 0 : (i-m+l)> (rows-1) ? 0 : (j-m+p) > (cols-1)? 0: inputImg[(i-m+l)*cols + (j-m+p)];
-            f = mask2[l][p];
+            f = mask[l][p];
             sum += (f*y) ;
         }
     }
@@ -90,7 +90,7 @@ void Convolve(int argc , char **argv){
     for(int k = 0; k < width * height; k++){
         int i = k/width;
         int j = k%width;
-        maskingFunc(hData, outputImg, width , height, i , j , 3);
+        maskingFunc(hData, outputImg, width , height, i , j , 3, mask2);
     }
     // printf("%f\n",outputImg[q]);
 
