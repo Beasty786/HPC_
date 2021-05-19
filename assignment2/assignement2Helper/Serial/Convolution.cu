@@ -113,7 +113,7 @@ void init(){
         for(int j = 0; j< 3; j++){
             mask1[i][j] = (float) 1/9; // average
             mask2[i][j] = -1; // sharpening
-            mask3[i][j] = (j == 0 && i != 1)?-1:(j == 0 && i == 1)? -2:(j == 2 && i != 1)?1:(j == 2 && i == 1)? 2:0; // edge
+            mask3[j][i] = (j == 0 && i != 1)?-1:(j == 0 && i == 1)? -2:(j == 2 && i != 1)?1:(j == 2 && i == 1)? 2:0; // edge
         }
     }
     mask2[1][1] = 9;
