@@ -21,7 +21,7 @@ float mask3[maskDimx*maskDimx]; // edging
 void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i, int j, float mask[maskDimx*maskDimx]);
 
 // Define the files that are to be save and the reference images for validation
-const char *imageFilename = "man.pgm";
+const char *imageFilename = "lena_bw.pgm";
 const char *refFilename   = "ref_rotated.pgm";
 
 const char *sampleName = "simpleTexture";
@@ -67,6 +67,7 @@ void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i
     outputImg[ i*cols + j] = sum ;
 }
 
+__constant__ float edge[9] = {-1,0,1,-2,0,2,-1,0,1};
 
 __global__ void globalConvolve(float *inIMG, float *outIMG, float *mask, int width, int height, int DIMx){
     // the 
@@ -85,7 +86,7 @@ __global__ void globalConvolve(float *inIMG, float *outIMG, float *mask, int wid
                 // f is the value of the mask at given indices
                 float y, f;
                 y = (i-m+l) < 0 ? 0 : (j-m+p) < 0 ? 0 : (i-m+l)> (height-1) ? 0 : (j-m+p) > (width-1)? 0: inIMG[(i-m+l)*width + (j-m+p)];
-                f = mask[l*DIMx + p];
+                f = edge[l*DIMx + p];
                 sum += (f*y) ;
             }
         }
@@ -132,8 +133,8 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     HANDLE_ERROR(cudaMalloc((void**)&gMask, maskDimx*maskDimx*sizeof(float)));
     HANDLE_ERROR(cudaMemcpy(gInputImg, inputImg , size, cudaMemcpyHostToDevice));
 
-    dim3 grids(4,4);
-    dim3 threads(128,128);
+    dim3 grids(8,8);
+    dim3 threads(64,64);
 
     globalConvolve<<<grids,threads>>>(gInputImg, gOutputImg, gMask,  width,  height,  maskDimx);
 
