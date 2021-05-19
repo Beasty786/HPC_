@@ -41,9 +41,12 @@ __constant__ float eve[9] = {1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9};
 __constant__ float sharp[9] = {-1,-1,-1,-1,9,-1,-1,-1,-1};
 
 
-__global__ void globalConvolve(float *inIMG, float *outIMG, int width, int height, int DIMx){
+__global__ void globalConvolve(float *inIMG, float *outIMG, int *gParams ){
     // the 
 
+    int width = gParams[0];
+    int height = gParams[1];
+    int DIMx = gParams[2];
     int i = threadIdx.x + blockIdx.x*blockDim.x;
     int j = threadIdx.y + blockIdx.y*blockDim.y;
     // unsigned int size = width*height;
@@ -71,6 +74,8 @@ int main( int argc, char **argv ){
     printMask(mask3);
 
     Convolve(argc, argv, mask2);
+
+    cudaDeviceReset();
     return 0;
 }
 
@@ -127,22 +132,30 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     
     
     
-    float *gInputImg , *gOutputImg, out[size];
+    float *gInputImg = 0 ;
+    float *gOut  = 0;
+    float out[size];
     // out = (float*) malloc(size);
+    int params[3] = {(int)width , (int)height,(int)maskDimx};
+    int *gParams;
     
-    checkCudaErrors(cudaMalloc((void**)&gInputImg , size));
-    checkCudaErrors(cudaMalloc((void**)&gOutputImg , size));
-    // checkCudaErrors(cudaMalloc((void**)&gMask, maskDimx*maskDimx*sizeof(float)));
+    checkCudaErrors(cudaMalloc((void**) &gOut , size));
+    checkCudaErrors(cudaMalloc((void**) &gParams , 3*sizeof(int)));
+
+    checkCudaErrors(cudaMalloc((void**) &gInputImg , size));
     checkCudaErrors(cudaMemcpy(gInputImg, inputImg , size, cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpy(gParams, params , 3*sizeof(int), cudaMemcpyHostToDevice));
 
-    dim3 grids(8,8);
-    dim3 threads(64,64);
 
-    globalConvolve<<<grids,threads>>>(gInputImg, gOutputImg,   width,  height,  maskDimx);
+    dim3 grids(8,8,1);
+    dim3 threads(64,64,1);
 
-    checkCudaErrors(cudaMemcpy(out, gOutputImg, size, cudaMemcpyDeviceToHost));
+    globalConvolve<<<threads,grids>>>(gInputImg, gOut,  gParams);
+    getLastCudaError("Kernel execution failed");
+    checkCudaErrors(cudaDeviceSynchronize());
+    checkCudaErrors(cudaMemcpy(out, gOut, size, cudaMemcpyDeviceToHost));
     cudaFree(gInputImg);
-    cudaFree(gOutputImg);
+    cudaFree(gOut);
     char outputFilenames[1024];
     strcpy(outputFilenames, imagePath);
     strcpy(outputFilenames + strlen(imagePath) - 4, "_Global_out.pgm");
