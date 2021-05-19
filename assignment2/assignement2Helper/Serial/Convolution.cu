@@ -80,8 +80,8 @@ __global__ void globalConvolve(float *inIMG, float *outIMG, float *mask, int wid
         int P = DIMx; // P is the mask's y-axis dimension
         float sum = 0.0;
         int m = (DIMx - 1)/2; // This handles different size mask dimensions i.e 3, 5, 7 etc
-        for(int l = 0; l < L; l++){
-            for(int p = 0; p < P; p++){
+        for(int l = 0; l < 3; l++){
+            for(int p = 0; p < 3; p++){
                 // y is the value in input
                 // f is the value of the mask at given indices
                 float y, f;
@@ -118,7 +118,7 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
  
     char outputFilename[1024];
     strcpy(outputFilename, imagePath);
-    strcpy(outputFilename + strlen(imagePath) - 4, "_out.pgm");
+    strcpy(outputFilename + strlen(imagePath) - 4, "1_out.pgm");
     sdkSavePGM(outputFilename, outputImg, width, height);
     printf("Wrote '%s'\n", outputFilename);
 
@@ -128,17 +128,17 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     float *gInputImg , *gOutputImg, *gMask, *out;
     out = (float*) malloc(size);
     
-    HANDLE_ERROR(cudaMalloc((void**)&gInputImg , size));
-    HANDLE_ERROR(cudaMalloc((void**)&gOutputImg , size));
-    HANDLE_ERROR(cudaMalloc((void**)&gMask, maskDimx*maskDimx*sizeof(float)));
-    HANDLE_ERROR(cudaMemcpy(gInputImg, inputImg , size, cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMalloc((void**)&gInputImg , size));
+    checkCudaErrors(cudaMalloc((void**)&gOutputImg , size));
+    checkCudaErrors(cudaMalloc((void**)&gMask, maskDimx*maskDimx*sizeof(float)));
+    checkCudaErrors(cudaMemcpy(gInputImg, inputImg , size, cudaMemcpyHostToDevice));
 
     dim3 grids(8,8);
     dim3 threads(64,64);
 
     globalConvolve<<<grids,threads>>>(gInputImg, gOutputImg, gMask,  width,  height,  maskDimx);
 
-    HANDLE_ERROR(cudaMemcpy(out, gOutputImg, size, cudaMemcpyDeviceToHost));
+    checkCudaErrors(cudaMemcpy(out, gOutputImg, size, cudaMemcpyDeviceToHost));
     cudaFree(gInputImg);
     cudaFree(gOutputImg);
     cudaFree(gMask);
