@@ -37,20 +37,9 @@ void Convolve(int argc , char **argv);
 
 int main( int argc, char **argv ){
     init();
-    // printOut(input , DIMy, DIMx);
     printMask(mask1);
     printMask(mask2);
     printMask(mask3);
-
-
-    // for(int i = 0; i < DIMy; i++){
-    //     for(int j = 0; j < DIMx; j++){
-    //         maskingFunc(i,j,3);
-    //     }
-    // }
-
-
-    // printOut(output);
 
     Convolve(argc, argv);
     return 0;
@@ -68,11 +57,11 @@ void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i
             // f is the value of the mask at given indices
             float y, f;
             y = (i-m+l) < 0 ? 0 : (j-m+p) < 0 ? 0 : (i-m+l)> (rows-1) ? 0 : (j-m+p) > (cols-1)? 0: inputImg[(i-m+l)*cols + (j-m+p)];
-            f = mask3[l][p];
+            f = mask2[l][p];
             sum += (f*y) ;
         }
     }
-    if(i== 0 && j==0) printf("the sum is %f\n",sum);
+    // if(i== 0 && j==0) printf("the sum is %f\n",sum);
     outputImg[ i*cols + j] = sum;
 }
 
@@ -82,7 +71,7 @@ void Convolve(int argc , char **argv){
     float *hData = NULL;
     unsigned int width , height;
 
-    int q = 512*511;
+    // int q = 512*511;
     char* imagePath = sdkFindFilePath(imageFilename, argv[0]);
     
     if(imagePath == NULL){
@@ -93,14 +82,14 @@ void Convolve(int argc , char **argv){
     sdkLoadPGM(imagePath, &hData, &width, &height);
     unsigned int size = width * height * sizeof(float);
     printf("Loaded '%s', %d x %d pixels\nand size is %d\n",imageFilename, width, height,size);
-    printf("%f\n",hData[q]);
+    // printf("%f\n",hData[q]);
     // printOut(hData, width, height);
 
     float *outputImg = (float *) malloc(size);
 
     for(int k = 0; k < width * height; k++){
         int i = k/width;
-        int j = k - (i*width);
+        int j = k%width;
         maskingFunc(hData, outputImg, width , height, i , j , 3);
     }
     // printf("%f\n",outputImg[q]);
@@ -122,9 +111,9 @@ void init(){
     // for the input
     for(int i = 0; i < 3; i++){
         for(int j = 0; j< 3; j++){
-            mask1[i][j] = (float) 1/9;
-            mask2[i][j] = -1;
-            mask3[i][j] = (j == 0 && i != 1)?-1:(j == 0 && i == 1)? -2:(j == 2 && i != 1)?1:(j == 2 && i == 1)? 2:0;
+            mask1[i][j] = (float) 1/9; // average
+            mask2[i][j] = -1; // sharpening
+            mask3[i][j] = (j == 0 && i != 1)?-1:(j == 0 && i == 1)? -2:(j == 2 && i != 1)?1:(j == 2 && i == 1)? 2:0; // edge
         }
     }
     mask2[1][1] = 9;
