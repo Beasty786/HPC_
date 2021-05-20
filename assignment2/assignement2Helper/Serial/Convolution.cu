@@ -117,7 +117,7 @@ __global__ void sharedConvolve(float *inputImg, float *outputImg, int *gParams){
                 sum = sum + inputImg[(j-(int)(DIMx/2)+p)*width+(i-(int)(DIMx/2)+l)]*sharp[p*DIMx+l];
             }
             else{
-                sum = sum + sharedMem[(threadIdx.y-(int)(DIMx/2)+l)][(threadIdx.x-(int)(DIMx/2)+p)]*sharp[p*DIMx+l];
+                sum = sum + sharedMem[(threadIdx.x-(int)(DIMx/2)+p)][(threadIdx.y-(int)(DIMx/2)+l)]*sharp[p*DIMx+l];
             }
         }
     }
