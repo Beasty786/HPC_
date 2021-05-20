@@ -151,21 +151,21 @@ __global__ void texConvolve(float *outputImg,int *gParams){
             if((i-m+p)<0){
                 sum = sum + 0; 
             }
-            else if((j-m+l)>=height){
+            else if((j-m+l) >= height){
                 sum = sum + 0;
             }
-            else if((i-m+p)>=width){
+            else if((i-m+p) >= width){
                 sum = sum + 0;
             }
             else if((j-m+l)<0){
                 sum = sum + 0;
             }
             else{
-                sum = sum + tex2D(tex,j-m+l , i-m+p)*tex2D(tex_av,l,p);
+                sum += tex2D(tex,j-m+l , i-m+p)*tex2D(tex_sharp,l,p);
             }
         }
     }
-    outputImg[i*height+j] =sum;
+    outputImg[i*height+j] = sum;
 
 }
 
@@ -173,9 +173,6 @@ __global__ void texConvolve(float *outputImg,int *gParams){
 
 int main( int argc, char **argv ){
     init();
-    printMask(mask1);
-    printMask(mask2);
-    printMask(mask3);
 
     Convolve(argc, argv, mask2);
 
