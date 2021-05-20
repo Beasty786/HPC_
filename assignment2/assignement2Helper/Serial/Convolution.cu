@@ -30,14 +30,25 @@ const char *sampleName = "simpleTexture";
  unsigned int width , height;
 
 
-//TESTING FUNCTIONS
-void init();
-void printOut(float *p , int y, int x);
-void printMask(float mask[maskDimx*maskDimx]);
+/*
+    These functions are vital functions
+*/ 
+ void writeFile(float *out , char* name , char* imagePath);
+ void Convolve(int argc , char **argv, float mask[maskDimx*maskDimx]);
 
-void Convolve(int argc , char **argv, float mask[maskDimx*maskDimx]);
+
+ //TESTING FUNCTIONS
+void init(); // this one initialises our masks
+void printOut(float *p , int y, int x); // This one has the power to print out the values of our whole image
+void printMask(float mask[maskDimx*maskDimx]); // This function prints out the mask of our fuctions
+
+
+/*
+    Create arrays of kernals for constant memory
+    These here will be shared with the the Shared memory device kernel function
+*/
 __constant__ float edge[9] = {-1,0,1,-2,0,2,-1,0,1};
-__constant__ float eve[9] = {1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9};
+__constant__ float ave[9] = {1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9};
 __constant__ float sharp[9] = {-1,-1,-1,-1,9,-1,-1,-1,-1};
 
 
@@ -122,16 +133,15 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
         int j = k - (i*width);
         maskingFunc(inputImg, outputImg, width , height, i , j , mask);
     }
- 
-    char outputFilename[1024];
-    strcpy(outputFilename, imagePath);
-    strcpy(outputFilename + strlen(imagePath) - 4, "1_out.pgm");
-    sdkSavePGM(outputFilename, outputImg, width, height);
-    printf("Wrote '%s'\n", outputFilename);
+    
+    writeFile(outputImg, "_Serial", imagePath);
+    
 
-    
-    
-    
+    /*
+        Here Begins the code for GLOBAL AND CONSTANT MEMORY
+        We create storage mechanisms and get rid of them again upon usage
+        No storage mechanism used here will be used for any other code sections
+    */
     float *gInputImg = 0 ;
     float *gOut  = 0;
     float out[size];
@@ -147,8 +157,8 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     checkCudaErrors(cudaMemcpy(gParams, params , 3*sizeof(int), cudaMemcpyHostToDevice));
 
 
-    dim3 grids(8,8,1);
-    dim3 threads(64,64,1);
+    dim3 grids(8,8);
+    dim3 threads(64,64);
 
     globalConvolve<<<threads,grids>>>(gInputImg, gOut,  gParams);
     getLastCudaError("Kernel execution failed");
@@ -156,16 +166,21 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     checkCudaErrors(cudaMemcpy(out, gOut, size, cudaMemcpyDeviceToHost));
     cudaFree(gInputImg);
     cudaFree(gOut);
-    char outputFilenames[1024];
-    strcpy(outputFilenames, imagePath);
-    strcpy(outputFilenames + strlen(imagePath) - 4, "_Global_out.pgm");
-    sdkSavePGM(outputFilenames, out, width, height);
-    printf("Wrote '%s'\n", outputFilenames);
+    writeFile(out , "_Global" , imagePath);
     
-    // free(out);
+    
 
 }
 
+void writeFile(float *out , char* name , char* imagePath){
+    char outputFilenames[1024];
+    strcpy(outputFilenames, imagePath);
+    strcpy(outputFilenames + strlen(imagePath) - 4,name);
+    strcat(outputFilenames ,"_out.pgm");
+
+    sdkSavePGM(outputFilenames, out, width, height);
+    printf("Wrote '%s'\n", outputFilenames);
+}
 
 // For testing purposes
 // Initialises a 5 by 5 matrix to be masked and a mask
