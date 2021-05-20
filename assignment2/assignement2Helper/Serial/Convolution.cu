@@ -87,41 +87,44 @@ __global__ void sharedConvolve(float *inputImg, float *outputImg, int *gParams){
     int j = threadIdx.y + blockIdx.y*blockDim.y;
     
     float sum = 0;
+    int m = (DIMx - 1)/2; // This handles different size mask dimensions i.e 3, 5, 7 etc
 
     sharedMem[threadIdx.x][threadIdx.y] = inputImg[i*height + j];
     __syncthreads();
     for(int p=0;p<DIMx;++p){
         for(int l=0;l<DIMx;++l){
-            if((j-(int)(DIMx/2)+p)<0){
+            if((i-m+p)<0){
                 sum = sum + 0; 
             }
-            else if((i-(int)(DIMx/2)+l)>=width){
+            else if((j-m+l)>=width){
                 sum = sum + 0;
             }
-            else if((j-(int)(DIMx/2)+p)>=height){
+            else if((i-m+p)>=height){
                 sum = sum + 0;
             }
-            else if((i-(int)(DIMx/2)+l)<0){
+            else if((j-m+l)<0){
                 sum = sum + 0;
             }
-            else if((threadIdx.y-(int)(DIMx/2)+l)<0){
-                sum = sum + inputImg[(j-(int)(DIMx/2)+p)*width+(i-(int)(DIMx/2)+l)]*sharp[p*DIMx+l];
+            else if((threadIdx.x-m+l)<0){
+                sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*sharp[p*DIMx+l];
             }
-            else if((threadIdx.y-(int)(DIMx/2)+l)>=tileWidth){
-                sum = sum + inputImg[(j-(int)(DIMx/2)+p)*width+(i-(int)(DIMx/2)+l)]*sharp[p*DIMx+l];
+            else if((threadIdx.x-m+l)>=tileWidth){
+                sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*sharp[p*DIMx+l];
             }
-            else if((threadIdx.x-(int)(DIMx/2)+p)<0){
-                sum = sum + inputImg[(j-(int)(DIMx/2)+p)*width+(i-(int)(DIMx/2)+l)]*sharp[p*DIMx+l];
+            else if((threadIdx.y-m+p)<0){
+                sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*sharp[p*DIMx+l];
             }
-            else if((threadIdx.x-(int)(DIMx/2)+p)>=tileWidth){
-                sum = sum + inputImg[(j-(int)(DIMx/2)+p)*width+(i-(int)(DIMx/2)+l)]*sharp[p*DIMx+l];
+            else if((threadIdx.y-m+p)>=tileWidth){
+                sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*sharp[p*DIMx+l];
             }
             else{
-                sum = sum + sharedMem[(threadIdx.x-(int)(DIMx/2)+p)][(threadIdx.y-(int)(DIMx/2)+l)]*sharp[p*DIMx+l];
+                sum = sum + sharedMem[(threadIdx.x-m+l)][(threadIdx.y-m+p)]*sharp[p*DIMx+l];
             }
         }
     }
-    outputImg[i*height+i] = sum;
+    outputImg[i*height+j] = sum;
+
+   
 
 }
 
