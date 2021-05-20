@@ -74,7 +74,6 @@ __global__ void globalConvolve(float *inIMG, float *outIMG, int *gParams ){
     
 }
 
-
 // Shared memory code for convolution
 __global__ void sharedConvolve(float *inputImg, float *outputImg, int *gParams){
     
@@ -123,10 +122,54 @@ __global__ void sharedConvolve(float *inputImg, float *outputImg, int *gParams){
         }
     }
     outputImg[i*height+j] = sum;
+}
 
-   
+
+
+
+/*
+    Code for Texture memory below
+*/
+texture<float, 2, cudaReadModeElementType> tex;
+texture<float,2,cudaReadModeElementType> tex_sharp;
+texture<float,2,cudaReadModeElementType> tex_edge;
+texture<float,2,cudaReadModeElementType> tex_av;
+
+
+__global__ void texConvolve(float *outputImg,int *gParams){
+    int width = gParams[0];
+    int height = gParams[1];
+    int DIMx = gParams[2];
+
+    int i = blockIdx.x*blockDim.x + threadIdx.x;
+    int j = blockIdx.y*blockDim.y + threadIdx.y;
+    int m = (DIMx - 1)/2; // This handles different size mask dimensions i.e 3, 5, 7 etc
+
+    float sum = 0;
+    for(int p=0;p<DIMx;++p){
+        for(int l=0;l<DIMx;++l){
+            if((i-m+p)<0){
+                sum = sum + 0; 
+            }
+            else if((j-m+l)>=height){
+                sum = sum + 0;
+            }
+            else if((i-m+p)>=width){
+                sum = sum + 0;
+            }
+            else if((j-m+l)<0){
+                sum = sum + 0;
+            }
+            else{
+                sum = sum + tex2D(tex,j-m+l , i-m+p)*tex2D(tex_av,l,p);
+            }
+        }
+    }
+    outputImg[i*height+j] =sum;
 
 }
+
+
 
 int main( int argc, char **argv ){
     init();
@@ -160,11 +203,7 @@ void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i
     outputImg[ i*cols + j] = sum ;
 }
 
-
-
 void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
-
-   
     // Get the image path for for the image file name
     char* imagePath = sdkFindFilePath(imageFilename, argv[0]);
     
@@ -246,11 +285,96 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     checkCudaErrors(cudaMemcpy(out_s, sOut, size, cudaMemcpyDeviceToHost));
     writeFile(out_s, "_Shared",imagePath);
     cudaFree(sOut);
-    cudaFree(sParams);
     cudaFree(sInputImg);
     free(out_s);
-    free(imagePath);
+    // free(imagePath);
 
+
+    //convulution mask
+    float *sharpening = (float*)malloc(sizeof(float)*3*3);
+    float *edgeDectection = (float*)malloc(sizeof(float)*3*3);
+    float *averaging = (float*)malloc(sizeof(float)*3*3);
+    float sharp[9] = {-1,-1,-1,-1,9,-1,-1,-1,-1};
+    float edge[9] = {-1,0,1,-2,0,2,-1,0,1};
+    float av[9] = {1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9};
+    sharpening=&sharp[0];
+    edgeDectection=&edge[0];
+    averaging=&av[0];
+
+
+    cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(32, 0, 0, 0, cudaChannelFormatKindFloat);
+    cudaChannelFormatDesc sharp_cd = cudaCreateChannelDesc(32, 0, 0, 0, cudaChannelFormatKindFloat);
+    cudaChannelFormatDesc edge_cd = cudaCreateChannelDesc(32, 0, 0, 0, cudaChannelFormatKindFloat);
+    cudaChannelFormatDesc av_cd = cudaCreateChannelDesc(32, 0, 0, 0, cudaChannelFormatKindFloat);
+    cudaArray *cuArray;
+    cudaArray *sharp_cu;
+    cudaArray *edge_cu;
+    cudaArray *av_cu;
+    checkCudaErrors(cudaMallocArray(&cuArray,&channelDesc,width,height));
+    checkCudaErrors(cudaMallocArray(&sharp_cu,&sharp_cd,3,3));
+    checkCudaErrors(cudaMallocArray(&edge_cu,&edge_cd,3,3));
+    checkCudaErrors(cudaMallocArray(&av_cu,&av_cd,3,3));
+    checkCudaErrors(cudaMemcpyToArray(cuArray,0,0,inputImg,size,cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpyToArray(sharp_cu,0,0,sharpening,3*3*sizeof(float),cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpyToArray(edge_cu,0,0,edgeDectection,3*3*sizeof(float),cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpyToArray(av_cu,0,0,averaging,maskDimx*maskDimx*sizeof(float),cudaMemcpyHostToDevice));
+
+    // Set texture parameters
+    tex.addressMode[0] = cudaAddressModeWrap;
+    tex.addressMode[1] = cudaAddressModeWrap;
+    tex.filterMode = cudaFilterModeLinear;
+    //tex.normalized = true;    // access with normalized texture coordinates
+
+    tex_sharp.addressMode[0] = cudaAddressModeWrap;
+    tex_sharp.addressMode[1] = cudaAddressModeWrap;
+    tex_sharp.filterMode = cudaFilterModeLinear;
+    //tex_sharp.normalized = true;    // access with normalized texture coordinates
+
+    tex_av.addressMode[0] = cudaAddressModeWrap;
+    tex_av.addressMode[1] = cudaAddressModeWrap;
+    tex_av.filterMode = cudaFilterModeLinear;
+    //tex_av.normalized = true;    // access with normalized texture coordinates
+
+    tex_edge.addressMode[0] = cudaAddressModeWrap;
+    tex_edge.addressMode[1] = cudaAddressModeWrap;
+    tex_edge.filterMode = cudaFilterModeLinear;
+    //tex_edge.normalized = true;    // access with normalized texture coordinates
+
+
+    // Bind the array to the texture
+    checkCudaErrors(cudaBindTextureToArray(tex, cuArray, channelDesc));
+    checkCudaErrors(cudaBindTextureToArray(tex_sharp, sharp_cu, sharp_cd));
+    checkCudaErrors(cudaBindTextureToArray(tex_edge, edge_cu, edge_cd));
+    checkCudaErrors(cudaBindTextureToArray(tex_av, av_cu, av_cd));
+
+    // dim3 grids(8,8);
+    // dim3 threads(64,64);
+
+     /////////////////////////////////////////////////////////////////timing texture
+     float *txData = NULL;
+     checkCudaErrors(cudaMalloc((void **) &txData, size));
+ 
+     StopWatchInterface *t_timer = NULL;
+     sdkCreateTimer(&t_timer);
+     sdkStartTimer(&t_timer);
+ 
+     texConvolve<<<threads,grids,0>>>(txData,sParams);
+     
+     getLastCudaError("Kernel execution failed");
+     checkCudaErrors(cudaDeviceSynchronize());
+ 
+     sdkStopTimer(&t_timer);
+    //  printf("Processing time for texture: %f (ms)\n", sdkGetTimerValue(&t_timer));
+    //  printf("%.2f Mpixels/sec\n",(width *height / (sdkGetTimerValue(&t_timer) / 1000.0f)) / 1e6);
+     sdkDeleteTimer(&t_timer);
+ 
+     // Allocate mem for the result on host side
+     float *tex_out = (float *) malloc(size);
+     checkCudaErrors(cudaMemcpy(tex_out,txData,size,cudaMemcpyDeviceToHost));
+    writeFile(tex_out, "_texMem",imagePath);
+
+    free(imagePath);
+    cudaFree(sParams);
 
 }
 
