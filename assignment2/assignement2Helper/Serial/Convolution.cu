@@ -214,15 +214,22 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
 
     float *outputImg = (float *) malloc(size);
 
+    StopWatchInterface *se_timer = NULL;
+    sdkCreateTimer(&se_timer);
+    sdkStartTimer(&se_timer);
     for(int k = 0; k < width * height; k++){
         int i = k/width;
         int j = k - (i*width);
         maskingFunc(inputImg, outputImg, width , height, i , j , mask);
     }
+    sdkStopTimer(&se_timer);
+    printf("Processing time for serial: %f (ms)\n", sdkGetTimerValue(&se_timer));
+    printf("%.2f Mpixels/sec\n",(width *height / (sdkGetTimerValue(&se_timer) / 1000.0f)) / 1e6);
+    sdkDeleteTimer(&se_timer);
     
     writeFile(outputImg, "_Serial", imagePath);
     
-
+//--------------------------------------------------------------------------------------------------------------------
     /*
         Here Begins the code for GLOBAL AND CONSTANT MEMORY
         We create storage mechanisms and get rid of them again upon usage
@@ -245,9 +252,18 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     dim3 grids(8,8);
     dim3 threads(64,64);
 
+    StopWatchInterface *g_timer = NULL;
+    sdkCreateTimer(&g_timer);
+    sdkStartTimer(&g_timer);
     globalConvolve<<<threads,grids>>>(gInputImg, gOut,  gParams);
     getLastCudaError("Kernel execution failed");
     checkCudaErrors(cudaDeviceSynchronize());
+    sdkStopTimer(&g_timer);
+    printf("Processing time for global: %f (ms)\n", sdkGetTimerValue(&g_timer));
+    printf("%.2f Mpixels/sec\n",(width *height / (sdkGetTimerValue(&g_timer) / 1000.0f)) / 1e6);
+    sdkDeleteTimer(&g_timer);
+
+
     checkCudaErrors(cudaMemcpy(out, gOut, size, cudaMemcpyDeviceToHost));
     cudaFree(gInputImg);
     cudaFree(gOut);
@@ -256,7 +272,7 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
 
     cudaDeviceReset(); // starting a new cuda session below
 
-
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------------
     /*
         Here we start with the shared memory code
     */
@@ -274,10 +290,20 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     checkCudaErrors(cudaMalloc((void**) &sInputImg , size));
     checkCudaErrors(cudaMemcpy(sInputImg, inputImg , size, cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(sParams, sparams , 3*sizeof(int), cudaMemcpyHostToDevice));
+
+    StopWatchInterface *s_timer = NULL;
+    sdkCreateTimer(&s_timer);
+    sdkStartTimer(&s_timer);
+
     sharedConvolve<<<threads, grids>>>(sInputImg, sOut, sParams);
 
     getLastCudaError("Kernel execution failed");
     checkCudaErrors(cudaDeviceSynchronize());
+
+    sdkStopTimer(&s_timer);
+    printf("Processing time for shared: %f (ms)\n", sdkGetTimerValue(&s_timer));
+    printf("%.2f Mpixels/sec\n",(width *height / (sdkGetTimerValue(&s_timer) / 1000.0f)) / 1e6);
+    sdkDeleteTimer(&s_timer);
 
     checkCudaErrors(cudaMemcpy(out_s, sOut, size, cudaMemcpyDeviceToHost));
     writeFile(out_s, "_Shared",imagePath);
@@ -286,18 +312,22 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     free(out_s);
     // free(imagePath);
 
-
+    //--------------------------------------------------------------------------------------------------------------------------------------------------------------
     //convulution mask
     float *sharpening = (float*)malloc(sizeof(float)*3*3);
     float *edgeDectection = (float*)malloc(sizeof(float)*3*3);
     float *averaging = (float*)malloc(sizeof(float)*3*3);
+   
+
     float sharp[9] = {-1,-1,-1,-1,9,-1,-1,-1,-1};
     float edge[9] = {-1,0,1,-2,0,2,-1,0,1};
-    float av[9] = {1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9};
-    sharpening=&sharp[0];
-    edgeDectection=&edge[0];
-    averaging=&av[0];
-
+    // float av[9] = {1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9};
+    sharpening = &sharp[0];
+    edgeDectection = &edge[0];
+    // averaging=&av[0];
+    for(int i=0;i<maskDimx*maskDimx;++i){
+        averaging[i] = 1/9;
+    }
 
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(32, 0, 0, 0, cudaChannelFormatKindFloat);
     cudaChannelFormatDesc sharp_cd = cudaCreateChannelDesc(32, 0, 0, 0, cudaChannelFormatKindFloat);
@@ -310,7 +340,7 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     checkCudaErrors(cudaMallocArray(&cuArray,&channelDesc,width,height));
     checkCudaErrors(cudaMallocArray(&sharp_cu,&sharp_cd,3,3));
     checkCudaErrors(cudaMallocArray(&edge_cu,&edge_cd,3,3));
-    checkCudaErrors(cudaMallocArray(&av_cu,&av_cd,3,3));
+    checkCudaErrors(cudaMallocArray(&av_cu,&av_cd,maskDimx,maskDimx));
     checkCudaErrors(cudaMemcpyToArray(cuArray,0,0,inputImg,size,cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpyToArray(sharp_cu,0,0,sharpening,3*3*sizeof(float),cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpyToArray(edge_cu,0,0,edgeDectection,3*3*sizeof(float),cudaMemcpyHostToDevice));
@@ -344,32 +374,32 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     checkCudaErrors(cudaBindTextureToArray(tex_edge, edge_cu, edge_cd));
     checkCudaErrors(cudaBindTextureToArray(tex_av, av_cu, av_cd));
 
-    // dim3 grids(8,8);
-    // dim3 threads(64,64);
-
-     /////////////////////////////////////////////////////////////////timing texture
-     float *txData = NULL;
-     checkCudaErrors(cudaMalloc((void **) &txData, size));
+    //timing texture
+    float *txData = NULL;
+    checkCudaErrors(cudaMalloc((void **) &txData, size));
  
-     StopWatchInterface *t_timer = NULL;
-     sdkCreateTimer(&t_timer);
-     sdkStartTimer(&t_timer);
+    StopWatchInterface *t_timer = NULL;
+    sdkCreateTimer(&t_timer);
+    sdkStartTimer(&t_timer);
  
-     texConvolve<<<threads,grids,0>>>(txData,sParams);
+    texConvolve<<<threads,grids,0>>>(txData,sParams);
      
-     getLastCudaError("Kernel execution failed");
-     checkCudaErrors(cudaDeviceSynchronize());
+    getLastCudaError("Kernel execution failed");
+    checkCudaErrors(cudaDeviceSynchronize());
  
-     sdkStopTimer(&t_timer);
-    //  printf("Processing time for texture: %f (ms)\n", sdkGetTimerValue(&t_timer));
-    //  printf("%.2f Mpixels/sec\n",(width *height / (sdkGetTimerValue(&t_timer) / 1000.0f)) / 1e6);
-     sdkDeleteTimer(&t_timer);
+    sdkStopTimer(&t_timer);
+    printf("Processing time for texture: %f (ms)\n", sdkGetTimerValue(&t_timer));
+    printf("%.2f Mpixels/sec\n",(width *height / (sdkGetTimerValue(&t_timer) / 1000.0f)) / 1e6);
+    sdkDeleteTimer(&t_timer);
  
-     // Allocate mem for the result on host side
-     float *tex_out = (float *) malloc(size);
-     checkCudaErrors(cudaMemcpy(tex_out,txData,size,cudaMemcpyDeviceToHost));
+    // Allocate mem for the result on host side
+    float *tex_out = (float *) malloc(size);
+    checkCudaErrors(cudaMemcpy(tex_out,txData,size,cudaMemcpyDeviceToHost));
     writeFile(tex_out, "_texMem",imagePath);
 
+    // free(sharpening);
+    // free(edgeDectection);
+    // free(averaging);
     free(imagePath);
     cudaFree(sParams);
 
@@ -382,7 +412,7 @@ void writeFile(float *out , char* name , char* imagePath){
     strcat(outputFilenames ,"_out.pgm");
 
     sdkSavePGM(outputFilenames, out, width, height);
-    printf("Wrote '%s'\n", outputFilenames);
+    printf("Wrote '%s'\n\n", outputFilenames);
 }
 
 // For testing purposes
