@@ -8,9 +8,9 @@
 
 
 #define maskDimx 3
+#define tileWidth 8 // this will be used for the shared memory code
 
-// input and mask are globals
-// below these are for testing purposes
+// input and mask are globals for the serial code
 float mask1[maskDimx*maskDimx]; // averaging
 float mask2[maskDimx*maskDimx]; // sharpening
 float mask3[maskDimx*maskDimx]; // edging
@@ -22,9 +22,7 @@ void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i
 
 // Define the files that are to be save and the reference images for validation
 const char *imageFilename = "lena_bw.pgm";
-const char *refFilename   = "ref_rotated.pgm";
 
-const char *sampleName = "simpleTexture";
  //load image from disk
  float *inputImg = NULL;
  unsigned int width , height;
@@ -51,10 +49,8 @@ __constant__ float edge[9] = {-1,0,1,-2,0,2,-1,0,1};
 __constant__ float ave[9] = {1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9};
 __constant__ float sharp[9] = {-1,-1,-1,-1,9,-1,-1,-1,-1};
 
-
+// Global memory code for convolution
 __global__ void globalConvolve(float *inIMG, float *outIMG, int *gParams ){
-    // the 
-
     int width = gParams[0];
     int height = gParams[1];
     int DIMx = gParams[2];
@@ -76,6 +72,57 @@ __global__ void globalConvolve(float *inIMG, float *outIMG, int *gParams ){
         }
         outIMG[ i*width + j] = sum ;
     
+}
+
+
+// Shared memory code for convolution
+__global__ void sharedConvolve(float *inputImg, float *outputImg, int *gParams){
+    
+    __shared__ float sharedMem[tileWidth][tileWidth];
+    
+    int width = gParams[0];
+    int height = gParams[1];
+    int DIMx = gParams[2];
+    int i = threadIdx.x + blockIdx.x*blockDim.x;
+    int j = threadIdx.y + blockIdx.y*blockDim.y;
+    
+    float sum = 0;
+
+    sharedMem[threadIdx.x][threadIdx.y] = inputImg[i*height + j];
+    __syncthreads();
+    for(int p=0;p<DIMx;++p){
+        for(int l=0;l<DIMx;++l){
+            if((j-(int)(DIMx/2)+p)<0){
+                sum = sum + 0; 
+            }
+            else if((i-(int)(DIMx/2)+l)>=width){
+                sum = sum + 0;
+            }
+            else if((j-(int)(DIMx/2)+p)>=height){
+                sum = sum + 0;
+            }
+            else if((i-(int)(DIMx/2)+l)<0){
+                sum = sum + 0;
+            }
+            else if((threadIdx.y-(int)(DIMx/2)+l)<0){
+                sum = sum + inputImg[(j-(int)(DIMx/2)+p)*width+(i-(int)(DIMx/2)+l)]*sharp[p*DIMx+l];
+            }
+            else if((threadIdx.y-(int)(DIMx/2)+l)>=tileWidth){
+                sum = sum + inputImg[(j-(int)(DIMx/2)+p)*width+(i-(int)(DIMx/2)+l)]*sharp[p*DIMx+l];
+            }
+            else if((threadIdx.x-(int)(DIMx/2)+p)<0){
+                sum = sum + inputImg[(j-(int)(DIMx/2)+p)*width+(i-(int)(DIMx/2)+l)]*sharp[p*DIMx+l];
+            }
+            else if((threadIdx.x-(int)(DIMx/2)+p)>=tileWidth){
+                sum = sum + inputImg[(j-(int)(DIMx/2)+p)*width+(i-(int)(DIMx/2)+l)]*sharp[p*DIMx+l];
+            }
+            else{
+                sum = sum + sharedMem[(threadIdx.y-(int)(DIMx/2)+l)][(threadIdx.x-(int)(DIMx/2)+p)]*sharp[p*DIMx+l];
+            }
+        }
+    }
+    outputImg[i*height+i] = sum;
+
 }
 
 int main( int argc, char **argv ){
@@ -144,14 +191,13 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     */
     float *gInputImg = 0 ;
     float *gOut  = 0;
-    float out[size];
-    // out = (float*) malloc(size);
+    float *out;
+    out = (float*) malloc(size);
     int params[3] = {(int)width , (int)height,(int)maskDimx};
     int *gParams;
     
     checkCudaErrors(cudaMalloc((void**) &gOut , size));
     checkCudaErrors(cudaMalloc((void**) &gParams , 3*sizeof(int)));
-
     checkCudaErrors(cudaMalloc((void**) &gInputImg , size));
     checkCudaErrors(cudaMemcpy(gInputImg, inputImg , size, cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(gParams, params , 3*sizeof(int), cudaMemcpyHostToDevice));
@@ -167,8 +213,41 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     cudaFree(gInputImg);
     cudaFree(gOut);
     writeFile(out , "_Global" , imagePath);
+    free(out);
+
+    cudaDeviceReset(); // starting a new cuda session below
+
+
+    /*
+        Here we start with the shared memory code
+    */
+    // dim3 grids(8,8);
+    // dim3 threads(64,64);
+    float *sInputImg = 0 ;
+    float *sOut  = 0;
+    float *out_s;
+    out_s = (float*) malloc(size);
+    int sparams[3] = {(int)width , (int)height,(int)maskDimx};
+    int *sParams;
     
-    
+    checkCudaErrors(cudaMalloc((void**) &sOut , size));
+    checkCudaErrors(cudaMalloc((void**) &sParams , 3*sizeof(int)));
+    checkCudaErrors(cudaMalloc((void**) &sInputImg , size));
+    checkCudaErrors(cudaMemcpy(sInputImg, inputImg , size, cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpy(sParams, sparams , 3*sizeof(int), cudaMemcpyHostToDevice));
+    sharedConvolve<<<threads, grids>>>(sInputImg, sOut, sParams);
+
+    getLastCudaError("Kernel execution failed");
+    checkCudaErrors(cudaDeviceSynchronize());
+
+    checkCudaErrors(cudaMemcpy(out_s, sOut, size, cudaMemcpyDeviceToHost));
+    writeFile(out_s, "_Shared",imagePath);
+    cudaFree(sOut);
+    cudaFree(sParams);
+    cudaFree(sInputImg);
+    free(out_s);
+    free(imagePath);
+
 
 }
 
