@@ -161,7 +161,7 @@ __global__ void texConvolve(float *outputImg,int *gParams){
                 sum = sum + 0;
             }
             else{
-                sum += tex2D(tex,j-m+l , i-m+p)*tex2D(tex_av,l,p);
+                sum += tex2D(tex,j-m+l , i-m+p)*tex2D(tex_edge,l,p);
             }
         }
     }
