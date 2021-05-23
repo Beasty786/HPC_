@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2020.10.25)  23 MAY 2021 23:11
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2020.10.25)  24 MAY 2021 00:29
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1110,7 +1110,7 @@ LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <9> not available
 (Font)              Font shape `OT1/ptm/b/n' tried instead on input line 9.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7> not available
 (Font)              Font shape `OT1/ptm/b/n' tried instead on input line 9.
-<witslogo_h.png, id=27, 1030.85126pt x 640.3925pt>
+<witslogo_h.png, id=35, 1030.85126pt x 640.3925pt>
 File: witslogo_h.png Graphic file (type png)
 <use witslogo_h.png>
 Package pdftex.def Info: witslogo_h.png  used on input line 15.
@@ -1142,65 +1142,123 @@ LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 3
 
 (/usr/share/texlive/texmf-dist/tex/latex/psnfss/ts1ptm.fd
 File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
-) [1]
-<Performance/averaging3.png, id=58, 1045.9075pt x 321.2pt>
+) [1] [2]
+<Performance/averaging3.png, id=73, 1051.93pt x 320.19624pt>
 File: Performance/averaging3.png Graphic file (type png)
 <use Performance/averaging3.png>
-Package pdftex.def Info: Performance/averaging3.png  used on input line 51.
-(pdftex.def)             Requested size: 522.95247pt x 160.59961pt.
+Package pdftex.def Info: Performance/averaging3.png  used on input line 87.
+(pdftex.def)             Requested size: 525.96371pt x 160.09772pt.
 
-Overfull \hbox (44.94609pt too wide) in paragraph at lines 51--55
+Overfull \hbox (47.95734pt too wide) in paragraph at lines 87--91
 [][] 
  []
 
-<Performance/sharpening.png, id=59, 1044.90375pt x 295.1025pt>
+<Performance/sharpening.png, id=74, 1036.87375pt x 285.065pt>
 File: Performance/sharpening.png Graphic file (type png)
 <use Performance/sharpening.png>
-Package pdftex.def Info: Performance/sharpening.png  used on input line 56.
-(pdftex.def)             Requested size: 522.45059pt x 147.55087pt.
+Package pdftex.def Info: Performance/sharpening.png  used on input line 92.
+(pdftex.def)             Requested size: 518.43561pt x 142.53215pt.
 
-Overfull \hbox (44.44421pt too wide) in paragraph at lines 56--58
+Overfull \hbox (40.42923pt too wide) in paragraph at lines 92--94
 [][]
  []
 
-[2 <./Performance/averaging3.png>]
-<Performance/edgeDetection.png, id=65, 1034.86626pt x 296.10625pt>
+[3 <./Performance/averaging3.png> <./Performance/sharpening.png>]
+<Performance/edgeDetection.png, id=81, 1031.855pt x 300.12125pt>
 File: Performance/edgeDetection.png Graphic file (type png)
 <use Performance/edgeDetection.png>
-Package pdftex.def Info: Performance/edgeDetection.png  used on input line 59.
-(pdftex.def)             Requested size: 517.43185pt x 148.05275pt.
+Package pdftex.def Info: Performance/edgeDetection.png  used on input line 95.
+(pdftex.def)             Requested size: 515.92624pt x 150.06026pt.
 
-Overfull \hbox (39.42548pt too wide) in paragraph at lines 59--60
+Overfull \hbox (37.91986pt too wide) in paragraph at lines 95--98
+[][]
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 95--98
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 95--98
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 95--98
+
+ []
+
+<Performance/averaging5.png, id=82, 1030.85126pt x 295.1025pt>
+File: Performance/averaging5.png Graphic file (type png)
+<use Performance/averaging5.png>
+Package pdftex.def Info: Performance/averaging5.png  used on input line 102.
+(pdftex.def)             Requested size: 515.42436pt x 147.55087pt.
+
+Overfull \hbox (37.41798pt too wide) in paragraph at lines 102--103
 [][] 
  []
 
-[3 <./Performance/sharpening.png> <./Performance/edgeDetection.png>]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 63.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 63.
+[4 <./Performance/edgeDetection.png> <./Performance/averaging5.png>]
+<images/image21Ave.png, id=91, 1238.6275pt x 613.29124pt>
+File: images/image21Ave.png Graphic file (type png)
+<use images/image21Ave.png>
+Package pdftex.def Info: images/image21Ave.png  used on input line 111.
+(pdftex.def)             Requested size: 619.31224pt x 306.64487pt.
 
-(./1814731_hw3.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 63.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 63.
+Overfull \hbox (141.30586pt too wide) in paragraph at lines 111--112
+[][] 
+ []
+
+<images/lenaEdge.png, id=92, 1090.0725pt x 667.49374pt>
+File: images/lenaEdge.png Graphic file (type png)
+<use images/lenaEdge.png>
+Package pdftex.def Info: images/lenaEdge.png  used on input line 116.
+(pdftex.def)             Requested size: 545.03491pt x 333.74606pt.
+
+Overfull \hbox (67.02853pt too wide) in paragraph at lines 116--117
+[][] 
+ []
+
+[5 <./images/image21Ave.png>]
+<images/manSharp.png, id=100, 1159.33125pt x 651.43375pt>
+File: images/manSharp.png Graphic file (type png)
+<use images/manSharp.png>
+Package pdftex.def Info: images/manSharp.png  used on input line 121.
+(pdftex.def)             Requested size: 579.66422pt x 325.71606pt.
+
+Overfull \hbox (101.65784pt too wide) in paragraph at lines 121--122
+[][] 
+ []
+
+[6 <./images/lenaEdge.png>] [7 <./images/manSharp.png>]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 126.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 126.
+ (./1814731_hw3.aux)
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 126.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 126.
 Package rerunfilecheck Info: File `1814731_hw3.out' has not changed.
-(rerunfilecheck)             Checksum: 77E5DB1D673ADE4CDFFB03D324A82DBE;301.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 63.
+(rerunfilecheck)             Checksum: 23A381527220C48D6B4CBD621E292EEF;437.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 126.
  ) ) 
 Here is how much of TeX's memory you used:
- 23082 strings out of 481239
- 419563 string characters out of 5920376
- 882568 words of memory out of 5000000
- 37801 multiletter control sequences out of 15000+600000
- 585397 words of font info for 118 fonts, out of 8000000 for 9000
+ 23125 strings out of 481239
+ 420270 string characters out of 5920376
+ 883566 words of memory out of 5000000
+ 37823 multiletter control sequences out of 15000+600000
+ 588319 words of font info for 124 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  60i,16n,66p,570b,438s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/share/texl
-ive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texlive/texmf-dist/
-fonts/type1/urw/times/utmr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw
-/times/utmri8a.pfb>
-Output written on 1814731_hw3.pdf (6 pages, 252904 bytes).
+ive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/te
+xmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dis
+t/fonts/type1/urw/times/utmb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/u
+rw/times/utmr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmri8
+a.pfb>
+Output written on 1814731_hw3.pdf (10 pages, 1408347 bytes).
 PDF statistics:
- 90 PDF objects out of 1000 (max. 8388607)
- 70 compressed objects within 1 object stream
- 15 named destinations out of 1000 (max. 500000)
- 73 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 141 PDF objects out of 1000 (max. 8388607)
+ 106 compressed objects within 2 object streams
+ 25 named destinations out of 1000 (max. 500000)
+ 109 words of extra memory for PDF output out of 10000 (max. 10000000)
 
