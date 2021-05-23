@@ -48,7 +48,16 @@ The images we are reading in are gray-scale images. Each image being read has wi
 \addcontentsline{toc}{subsection}{Performance Comparisons Among All Approaches}
 In this section we show the performance comparisons among all approaches but not for all pictures. The reason why I will not show for all pictures that were used in this assignment is because the all pictures were of the exact size and dimensions, and therefore the output for each we very similar. This will be proven by means of pictures or screenshots and then I will explain the results.
 
-%\includegraphics[scale=0.5]{Image21/image21edge.png}
+\includegraphics[scale=0.5]{Performance/averaging3.png}
+\\
+\textbf{Averaging: }Above are the times taken for each implementation per picture. With no doubt we can see that the Serial time is far far greater than any times tabulated. This is because every block or entry in memory for the output image is calculated one after the other.
+We expect the texture memory results to be the best and with no doubt they are as expected and explained in the design styles section of this report. Though the differences aren't significantly different, shared memory outperforms global memory on average but not all time. Please note that the reasons mentioned here for performance will apply to the tables we are going to list below for other kernels.
+
+\includegraphics[scale=0.5]{Performance/sharpening.png}
+\textbf{Sharpening: }Here we can conclude that serial time and texture time are living up to what we expect of them. Though shared memory is required to outperform global at all times, we fail to achieve that. The reason is due to the initialization of the tile size memory that has to be shared. This could however been optimized had I had more time to work on the code. 
+
+\includegraphics[scale=0.5]{Performance/edgeDetection.png}
+
 
  
 \end{document} 
