@@ -9,7 +9,7 @@
 
 #define maskDimx 3
 #define tileWidth 8 // this will be used for the shared memory code
-#define maskChoice 1
+#define maskChoice 2
 
 // input and mask are globals for the serial code
 float mask1[maskDimx*maskDimx]; // averaging
@@ -22,7 +22,7 @@ float mask3[maskDimx*maskDimx]; // edging
 void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i, int j, float mask[maskDimx*maskDimx]);
 
 // Define the files that are to be save and the reference images for validation
-const char *imageFilename = "image21/image21.pgm";
+const char *imageFilename = "image21/sharp/image21.pgm";
 
  //load image from disk
  float *inputImg = NULL;
