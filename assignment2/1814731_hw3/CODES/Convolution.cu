@@ -9,12 +9,13 @@
 
 #define maskDimx 3
 #define tileWidth 8 // this will be used for the shared memory code
-#define maskChoice 1
+#define maskChoice 4
 
 // input and mask are globals for the serial code
 float mask1[maskDimx*maskDimx]; // averaging
 float mask2[maskDimx*maskDimx]; // sharpening
 float mask3[maskDimx*maskDimx]; // edging
+float mask4[5*5];
 
 
 // l and p are the rows and colums of the mask respectively
@@ -49,14 +50,17 @@ void printMask(float mask[maskDimx*maskDimx]); // This function prints out the m
 __constant__ float edge[9] = {-1,0,1,-2,0,2,-1,0,1};
 __constant__ float ave[9] = {0.111111,0.111111,0.111111,0.111111,0.111111,0.111111,0.111111,0.111111,0.111111};
 __constant__ float sharp[9] = {-1,-1,-1,-1,9,-1,-1,-1,-1};
+__constant__ float ave5[25] = {0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04};
 
 // Global memory code for convolution
 __global__ void globalConvolve(float *inIMG, float *outIMG, int *gParams){
     int width = gParams[0];
     int height = gParams[1];
-    int DIMx = gParams[2];
+    int mC = gParams[3]; // this is the mask choice
+    int DIMx = (mC < 4) ? gParams[2] : 5;
     int i = threadIdx.x + blockIdx.x*blockDim.x;
     int j = threadIdx.y + blockIdx.y*blockDim.y;
+
     // unsigned int size = width*height;
  
         float sum = 0.0;
@@ -67,7 +71,7 @@ __global__ void globalConvolve(float *inIMG, float *outIMG, int *gParams){
                 // f is the value of the mask at given indices
                 float y, f;
                 y = (i-m+l) < 0 ? 0 : (j-m+p) < 0 ? 0 : (i-m+l)> (height-1) ? 0 : (j-m+p) > (width-1)? 0: inIMG[(i-m+l)*width + (j-m+p)];
-                f = ave[l*DIMx + p];
+                f = (mC == 1)? ave[l*DIMx + p]:(mC == 2)?sharp[l*DIMx + p]:(mC == 3) ? edge[l*DIMx + p]:ave5[l*DIMx + p];
                 sum += (f*y) ;
             }
         }
@@ -82,7 +86,8 @@ __global__ void sharedConvolve(float *inputImg, float *outputImg, int *gParams){
     
     int width = gParams[0];
     int height = gParams[1];
-    int DIMx = gParams[2];
+    int mC = gParams[3];
+    int DIMx = (mC < 4) ? gParams[2] : 5;
     int i = threadIdx.x + blockIdx.x*blockDim.x;
     int j = threadIdx.y + blockIdx.y*blockDim.y;
     
@@ -94,7 +99,8 @@ __global__ void sharedConvolve(float *inputImg, float *outputImg, int *gParams){
     for(int p=0;p<DIMx;++p){
         for(int l=0;l<DIMx;++l){
 
-            float MASK = ave[p*DIMx+l];
+            float MASK = (mC == 1)? ave[p*DIMx+l]: (mC == 2)?sharp[p*DIMx+l]: (mC == 3) ? edge[p*DIMx+l]: ave5[p*DIMx+l];
+            
 
             if((i-m+p)<0){
                 sum = sum + 0; 
@@ -142,7 +148,7 @@ __global__ void texConvolve(float *outputImg,int *gParams){
     int width = gParams[0];
     int height = gParams[1];
     int DIMx = gParams[2];
-
+    int mC = gParams[3];
     int i = blockIdx.x*blockDim.x + threadIdx.x;
     int j = blockIdx.y*blockDim.y + threadIdx.y;
     int m = (DIMx - 1)/2; // This handles different size mask dimensions i.e 3, 5, 7 etc
@@ -150,6 +156,7 @@ __global__ void texConvolve(float *outputImg,int *gParams){
     float sum = 0;
     for(int p=0;p<DIMx;++p){
         for(int l=0;l<DIMx;++l){
+            float val = (mC == 2) ?tex2D(tex_sharp,l,p):(mC == 3)?tex2D(tex_edge,l,p): tex2D(tex_av,l,p);
             if((i-m+p)<0){
                 sum = sum + 0; 
             }
@@ -163,7 +170,7 @@ __global__ void texConvolve(float *outputImg,int *gParams){
                 sum = sum + 0;
             }
             else{
-                sum += tex2D(tex,j-m+l , i-m+p)*tex2D(tex_av,l,p);
+                sum += tex2D(tex,j-m+l , i-m+p)*val;
             }
         }
     }
@@ -178,9 +185,11 @@ int main( int argc, char **argv ){
         Convolve(argc, argv, mask1);
     else if(maskChoice == 2)
         Convolve(argc, argv, mask2);
-    else
+    else if(maskChoice == 3)
         Convolve(argc, argv, mask3);
-
+    else{
+        Convolve(argc, argv , mask4);
+    }
 
     cudaDeviceReset();
     return 0;
@@ -245,14 +254,14 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     float *gOut  = 0;
     float *out;
     out = (float*) malloc(size);
-    int params[3] = {(int)width , (int)height,(int)maskDimx};
+    int params[4] = {(int)width , (int)height,(int)maskDimx, (int) maskChoice};
     int *gParams;
     
     checkCudaErrors(cudaMalloc((void**) &gOut , size));
-    checkCudaErrors(cudaMalloc((void**) &gParams , 3*sizeof(int)));
+    checkCudaErrors(cudaMalloc((void**) &gParams , 4*sizeof(int)));
     checkCudaErrors(cudaMalloc((void**) &gInputImg , size));
     checkCudaErrors(cudaMemcpy(gInputImg, inputImg , size, cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(gParams, params , 3*sizeof(int), cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpy(gParams, params , 4*sizeof(int), cudaMemcpyHostToDevice));
 
 
     dim3 grids(8,8);
@@ -288,14 +297,14 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     float *sOut  = 0;
     float *out_s;
     out_s = (float*) malloc(size);
-    int sparams[3] = {(int)width , (int)height,(int)maskDimx};
+    int sparams[4] = {(int)width , (int)height,(int)maskDimx , (int) maskChoice};
     int *sParams;
     
     checkCudaErrors(cudaMalloc((void**) &sOut , size));
-    checkCudaErrors(cudaMalloc((void**) &sParams , 3*sizeof(int)));
+    checkCudaErrors(cudaMalloc((void**) &sParams , 4*sizeof(int)));
     checkCudaErrors(cudaMalloc((void**) &sInputImg , size));
     checkCudaErrors(cudaMemcpy(sInputImg, inputImg , size, cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(sParams, sparams , 3*sizeof(int), cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpy(sParams, sparams , 4*sizeof(int), cudaMemcpyHostToDevice));
 
     StopWatchInterface *s_timer = NULL;
     sdkCreateTimer(&s_timer);
@@ -430,6 +439,12 @@ void init(){
             mask1[i*maskDimx + j] = (float) 1/(maskDimx*maskDimx); // average
             mask2[i*maskDimx + j] = -1; // sharpening
             mask3[i*maskDimx + j] = (j == 0 && i != 1)?-1:(j == 0 && i == 1)? -2:(j == 2 && i != 1)?1:(j == 2 && i == 1)? 2.0:0.0; // edge
+        }
+    }
+
+    for(int i = 0; i < 5; i++){
+        for(int j = 0; j< 5; j++){
+            mask4[i*5 + j] = 0.04;
         }
     }
     mask2[(maskDimx/2)*maskDimx + maskDimx/2] = 9;
