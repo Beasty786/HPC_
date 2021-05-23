@@ -10,6 +10,14 @@
 #define maskDimx 3
 #define tileWidth 8 // this will be used for the shared memory code
 
+/*
+    maskChoice chooses from three masks
+    1 averaging
+    2 sharpening
+    3 edge detecting
+*/
+#define maskChoice 1
+
 // input and mask are globals for the serial code
 float mask1[maskDimx*maskDimx]; // averaging
 float mask2[maskDimx*maskDimx]; // sharpening
@@ -21,7 +29,7 @@ float mask3[maskDimx*maskDimx]; // edging
 void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i, int j, float mask[maskDimx*maskDimx]);
 
 // Define the files that are to be save and the reference images for validation
-const char *imageFilename = "lena_bw.pgm";
+const char *imageFilename = "image21/image21.pgm";
 
  //load image from disk
  float *inputImg = NULL;
@@ -50,7 +58,7 @@ __constant__ float ave[9] = {1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9};
 __constant__ float sharp[9] = {-1,-1,-1,-1,9,-1,-1,-1,-1};
 
 // Global memory code for convolution
-__global__ void globalConvolve(float *inIMG, float *outIMG, int *gParams ){
+__global__ void globalConvolve(float *inIMG, float *outIMG, int *gParams, int mC ){
     int width = gParams[0];
     int height = gParams[1];
     int DIMx = gParams[2];
@@ -66,7 +74,14 @@ __global__ void globalConvolve(float *inIMG, float *outIMG, int *gParams ){
                 // f is the value of the mask at given indices
                 float y, f;
                 y = (i-m+l) < 0 ? 0 : (j-m+p) < 0 ? 0 : (i-m+l)> (height-1) ? 0 : (j-m+p) > (width-1)? 0: inIMG[(i-m+l)*width + (j-m+p)];
-                f = sharp[l*DIMx + p];
+                
+                if(mC == 1)
+                    f = ave[l*DIMx + p];
+                else if(mC == 2)
+                    f = sharp[l*DIMx + p];
+                else
+                    f = edge[l*DIMx + p];
+
                 sum += (f*y) ;
             }
         }
@@ -75,7 +90,7 @@ __global__ void globalConvolve(float *inIMG, float *outIMG, int *gParams ){
 }
 
 // Shared memory code for convolution
-__global__ void sharedConvolve(float *inputImg, float *outputImg, int *gParams){
+__global__ void sharedConvolve(float *inputImg, float *outputImg, int *gParams, int mC){
     
     __shared__ float sharedMem[tileWidth][tileWidth];
     
@@ -105,19 +120,45 @@ __global__ void sharedConvolve(float *inputImg, float *outputImg, int *gParams){
                 sum = sum + 0;
             }
             else if((threadIdx.x-m+l)<0){
-                sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*sharp[p*DIMx+l];
+                if(mC == 1)
+                    sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*ave[p*DIMx+l];
+                else if(mC == 2)
+                    sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*sharp[p*DIMx+l];
+                else
+                    sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*edge[p*DIMx+l];
             }
             else if((threadIdx.x-m+l)>=tileWidth){
-                sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*sharp[p*DIMx+l];
+                if(mC == 1)
+                    sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*ave[p*DIMx+l];
+                else if(mC == 2)
+                    sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*sharp[p*DIMx+l];
+                else
+                    sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*edge[p*DIMx+l];
+
             }
             else if((threadIdx.y-m+p)<0){
-                sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*sharp[p*DIMx+l];
+                if(mC == 1)
+                    sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*ave[p*DIMx+l];
+                else if(mC == 2)
+                    sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*sharp[p*DIMx+l];
+                else
+                    sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*edge[p*DIMx+l];
             }
             else if((threadIdx.y-m+p)>=tileWidth){
-                sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*sharp[p*DIMx+l];
+                if(mC == 1)
+                    sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*ave[p*DIMx+l];
+                else if(mC == 2)
+                    sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*sharp[p*DIMx+l];
+                else
+                    sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*edge[p*DIMx+l];
             }
             else{
-                sum = sum + sharedMem[(threadIdx.x-m+l)][(threadIdx.y-m+p)]*sharp[p*DIMx+l];
+                if(mC == 1)
+                    sum = sum + sharedMem[(threadIdx.x-m+l)][(threadIdx.y-m+p)]*ave[p*DIMx+l];
+                else if(mC == 2)
+                    sum = sum + sharedMem[(threadIdx.x-m+l)][(threadIdx.y-m+p)]*sharp[p*DIMx+l];
+                else
+                    sum = sum + sharedMem[(threadIdx.x-m+l)][(threadIdx.y-m+p)]*edge[p*DIMx+l];
             }
         }
     }
@@ -134,7 +175,7 @@ texture<float,2,cudaReadModeElementType> tex_edge;
 texture<float,2,cudaReadModeElementType> tex_av;
 
 
-__global__ void texConvolve(float *outputImg,int *gParams){
+__global__ void texConvolve(float *outputImg,int *gParams, int mC){
     int width = gParams[0];
     int height = gParams[1];
     int DIMx = gParams[2];
@@ -159,7 +200,12 @@ __global__ void texConvolve(float *outputImg,int *gParams){
                 sum = sum + 0;
             }
             else{
-                sum += tex2D(tex,j-m+l , i-m+p)*tex2D(tex_edge,l,p);
+                if(mC == 1)
+                    sum += tex2D(tex,j-m+l , i-m+p)*tex2D(tex_av,l,p);
+                else if(mC == 2)
+                    sum += tex2D(tex,j-m+l , i-m+p)*tex2D(tex_sharp,l,p);
+                else
+                    sum += tex2D(tex,j-m+l , i-m+p)*tex2D(tex_edge,l,p);
             }
         }
     }
@@ -170,7 +216,14 @@ __global__ void texConvolve(float *outputImg,int *gParams){
 int main( int argc, char **argv ){
     init();
 
-    Convolve(argc, argv, mask2);
+    // Mask by choice
+    if(maskChoice == 1)    
+        Convolve(argc, argv, mask1);
+    else if(maskChoice == 2)
+        Convolve(argc, argv, mask2);
+    else
+        Convolve(argc, argv, mask3);
+
 
     cudaDeviceReset();
     return 0;
@@ -251,7 +304,7 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     StopWatchInterface *g_timer = NULL;
     sdkCreateTimer(&g_timer);
     sdkStartTimer(&g_timer);
-    globalConvolve<<<threads,grids>>>(gInputImg, gOut,  gParams);
+    globalConvolve<<<threads,grids>>>(gInputImg, gOut,  gParams , maskChoice);
     getLastCudaError("Kernel execution failed");
     checkCudaErrors(cudaDeviceSynchronize());
     sdkStopTimer(&g_timer);
@@ -291,7 +344,7 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     sdkCreateTimer(&s_timer);
     sdkStartTimer(&s_timer);
 
-    sharedConvolve<<<threads, grids>>>(sInputImg, sOut, sParams);
+    sharedConvolve<<<threads, grids>>>(sInputImg, sOut, sParams , maskChoice);
 
     getLastCudaError("Kernel execution failed");
     checkCudaErrors(cudaDeviceSynchronize());
@@ -378,7 +431,7 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     sdkCreateTimer(&tex_timer);
     sdkStartTimer(&tex_timer);
  
-    texConvolve<<<threads,grids,0>>>(txData,sParams);
+    texConvolve<<<threads,grids,0>>>(txData,sParams,maskChoice);
      
     getLastCudaError("Kernel execution failed");
     checkCudaErrors(cudaDeviceSynchronize());
