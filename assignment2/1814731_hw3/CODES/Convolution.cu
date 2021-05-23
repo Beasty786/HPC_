@@ -200,7 +200,7 @@ void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i
     int L = maskDimx; // L is the mask's x-axis dimension 
     int P = maskDimx; // P is the mask's y-axis dimension
     float sum = 0.0;
-    int m = (maskDimx - 1)/2; // This handles different size mask dimensions i.e 3, 5, 7 etc
+    int m = (maskChoice == 4)? 5: (maskDimx - 1)/2; // This handles different size mask dimensions i.e 3, 5, 7 etc
     for(int l = 0; l < L; l++){
         for(int p = 0; p < P; p++){
             // y is the value in input
@@ -244,7 +244,7 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     
     writeFile(outputImg, "_Serial", imagePath);
     
-//--------------------------------------------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------------------------------------------------
     /*
         Here Begins the code for GLOBAL AND CONSTANT MEMORY
         We create storage mechanisms and get rid of them again upon usage
