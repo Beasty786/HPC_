@@ -1,0 +1,55 @@
+
+\begin{document}
+\pagenumbering{roman}
+\title{COMS4040A \& COMS7045A Assignment 2 -- Report}
+\author{Shameel Nkosi and Nomasonto, 1814731, Coms Hons}
+%\date{} 
+\maketitle 
+%\thispagestyle{empty}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{\thepage}
+\fancyhead[L]{COMS4040A \& COMS7045A Assignment 2}
+%\vskip 3mm 
+%\pagenumbering{roman}
+\newpage
+\tableofcontents
+\newpage
+\begin{center}
+	\textit{This page is intentionally left blank}
+\end{center}
+\newpage
+\pagenumbering{arabic}
+\section*{Introduction}
+\addcontentsline{toc}{section}{Introduction}
+\subsection*{Convolutions}
+\addcontentsline{toc}{subsection}{Convolutions}
+In this report I discuss convolutions an different implementations. Convolutions in the context of this report are nothing more than processing images digital. Convolutions can however, be applied to images, video or even audio. The goal to achieve the task of as quick as possible given that having a lot of computations can have notable performance issues.
+
+The images we are reading in are gray-scale images. Each image being read has width and height. This means that there are pixels on the x-axis as well as the y-axis. Since the picture is gray-scale, each pixel has a single value instead of a \textit{rgb} vector of 3 values per pixel. This makes our job slightly easier. 
+
+\subsection*{Design Style}
+\addcontentsline{toc}{subsection}{Design Style}
+\subsubsection*{Initial implementation}
+ The images here are loaded as single array of values of size \textit{width} x \textit{height} instead of a 2 dimensional array of dimension \textit{(width,height)}. Initially, the design style I employed was one that worked on an \textit{n by m} matrix which worked pretty well and was easy to maintain and keep track of the indices. This however, required me to turn the loaded image into a two dimensional array and then back to a one dimensional upon being processed so that it can be written to a file. 
+ 
+ \subsubsection*{Current implementation}
+ In the implementation submitted, The code works on one dimensional arrays throughout. This makes reading and writing of images easy and it also enables one to avoid making mistakes of deforming the image. As required, there are 4 different implementations done here:
+ \begin{itemize}
+ 	\item \textbf{Serial implementation:} In this implementation everything is done sequentially, one computation at a time by a single processor.
+ 	\item \textbf{Parallel with global and constant memory:} The parallel code is implemented using the CUDA programming interface. Here we have a number of threads working together to achieve a common goal, executing the same instruction on different parts of the memory. Memory here is on disk, therefore for every thread executing, the thread makes a request for an item in memory.
+ 	\item \textbf{Parallel with shared and constant memory:}  Similar to the point above with a small, here memory is shared and therefore cached. This means that if a block is shared, a request is made only once for a block of memory, threads sharing memory use the cached or fetched memory. This avoids the traffic to and from main memory. We therefore, expect this implementation to be better than the one above.
+ 	\item \textbf{Parallel with texture memory:} This is read only memory that aims to gives us better performance gains compared to any on the implementations mentioned above. Texture exploits the idea of spatial memory access, which states that if you access memory, you are likely to use the neighboring memory blocks, therefore when a request is made, neighboring memory comes with that requested memory address, which is what we need in the purposes of the our assignment.
+ \end{itemize}
+
+\section*{Performance}
+\addcontentsline{toc}{section}{Performance}
+\subsection*{Performance Comparisons Among All Approaches}
+\addcontentsline{toc}{subsection}{Performance Comparisons Among All Approaches}
+In this section we show the performance comparisons among all approaches but not for all pictures. The reason why I will not show for all pictures that were used in this assignment is because the all pictures were of the exact size and dimensions, and therefore the output for each we very similar. This will be proven by means of pictures or screenshots and then I will explain the results.
+
+%\includegraphics[scale=0.5]{Image21/image21edge.png}
+
+ 
+\end{document} 
+

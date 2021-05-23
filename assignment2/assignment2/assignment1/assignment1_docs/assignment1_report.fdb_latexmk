@@ -1,0 +1,19 @@
+# Fdb version 3
+["pdflatex"] 1621788453 "/home/beast/Documents/School/HPC_/assignment2/assignment2/assignment1/assignment1_docs/assignment1_report.tex" "/home/beast/Documents/School/HPC_/assignment2/assignment2/assignment1/assignment1_docs/assignment1_report.pdf" "assignment1_report" 1621788453
+  "/etc/texmf/web2c/texmf.cnf" 1601192507 475 c0e671620eb5563b2130f56340a5fde8 ""
+  "/home/beast/Documents/School/HPC_/assignment2/assignment2/assignment1/assignment1_docs/assignment1_report.aux" 1621788453 8 a94a2480d3289e625eea47cd1b285758 ""
+  "/home/beast/Documents/School/HPC_/assignment2/assignment2/assignment1/assignment1_docs/assignment1_report.tex" 1551182658 452 57b81f4de517fdcb260e0494a9329c11 ""
+  "/usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb" 1248133631 35752 024fb6c41858982481f6968b5fc26508 ""
+  "/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-pdfmode.def" 1580854751 25404 9d60f463a00d154207ec0048dee27cf0 ""
+  "/usr/share/texlive/texmf-dist/web2c/texmf.cnf" 1581979058 38841 ce3692aa899bb693b90b87eaa5d4d84e ""
+  "/usr/share/texmf/web2c/texmf.cnf" 1581979058 38841 ce3692aa899bb693b90b87eaa5d4d84e ""
+  "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1603660691 4770781 1ed1abab22da9c3e2cc82e4db562318b ""
+  "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1603660760 8261000 7a8f146603b8fbc7cbcaf5623d1840b3 ""
+  "assignment1_report.aux" 0 -1 0 "pdflatex"
+  "assignment1_report.tex" 1551182658 452 57b81f4de517fdcb260e0494a9329c11 ""
+  (generated)
+  "/home/beast/Documents/School/HPC_/assignment2/assignment2/assignment1/assignment1_docs/assignment1_report.log"
+  "assignment1_report.aux"
+  "assignment1_report.log"
+  "assignment1_report.pdf"
+  "/home/beast/Documents/School/HPC_/assignment2/assignment2/assignment1/assignment1_docs/assignment1_report.pdf"
