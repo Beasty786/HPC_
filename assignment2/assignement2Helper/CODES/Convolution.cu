@@ -125,8 +125,6 @@ __global__ void sharedConvolve(float *inputImg, float *outputImg, int *gParams){
 }
 
 
-
-
 /*
     Code for Texture memory below
 */
@@ -168,8 +166,6 @@ __global__ void texConvolve(float *outputImg,int *gParams){
     outputImg[i*height+j] = sum;
 
 }
-
-
 
 int main( int argc, char **argv ){
     init();
@@ -378,19 +374,19 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
     float *txData = NULL;
     checkCudaErrors(cudaMalloc((void **) &txData, size));
  
-    StopWatchInterface *t_timer = NULL;
-    sdkCreateTimer(&t_timer);
-    sdkStartTimer(&t_timer);
+    StopWatchInterface *tex_timer = NULL;
+    sdkCreateTimer(&tex_timer);
+    sdkStartTimer(&tex_timer);
  
     texConvolve<<<threads,grids,0>>>(txData,sParams);
      
     getLastCudaError("Kernel execution failed");
     checkCudaErrors(cudaDeviceSynchronize());
  
-    sdkStopTimer(&t_timer);
-    printf("Processing time for texture: %f (ms)\n", sdkGetTimerValue(&t_timer));
-    printf("%.2f Mpixels/sec\n",(width *height / (sdkGetTimerValue(&t_timer) / 1000.0f)) / 1e6);
-    sdkDeleteTimer(&t_timer);
+    sdkStopTimer(&tex_timer);
+    printf("Processing time for texture: %f (ms)\n", sdkGetTimerValue(&tex_timer));
+    printf("%.2f Mpixels/sec\n",(width *height / (sdkGetTimerValue(&tex_timer) / 1000.0f)) / 1e6);
+    sdkDeleteTimer(&tex_timer);
  
     // Allocate mem for the result on host side
     float *tex_out = (float *) malloc(size);
@@ -418,8 +414,6 @@ void writeFile(float *out , char* name , char* imagePath){
 // For testing purposes
 // Initialises a 5 by 5 matrix to be masked and a mask
 void init(){
-    // for the mask
-
     // for the input
     for(int i = 0; i < maskDimx; i++){
         for(int j = 0; j< maskDimx; j++){
@@ -429,8 +423,6 @@ void init(){
         }
     }
     mask2[(maskDimx/2)*maskDimx + maskDimx/2] = 9;
-    
-
 }
 
 // prints the output picture
