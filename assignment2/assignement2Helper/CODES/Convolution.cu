@@ -22,7 +22,7 @@ float mask3[maskDimx*maskDimx]; // edging
 void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i, int j, float mask[maskDimx*maskDimx]);
 
 // Define the files that are to be save and the reference images for validation
-const char *imageFilename = "image21/averaging/image21.pgm";
+const char *imageFilename = "mandrill/averaging/mandrill.pgm";
 
  //load image from disk
  float *inputImg = NULL;
