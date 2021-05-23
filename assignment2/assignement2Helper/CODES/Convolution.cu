@@ -9,7 +9,7 @@
 
 #define maskDimx 3
 #define tileWidth 8 // this will be used for the shared memory code
-#define maskChoice 2
+#define maskChoice 3
 
 // input and mask are globals for the serial code
 float mask1[maskDimx*maskDimx]; // averaging
@@ -22,7 +22,7 @@ float mask3[maskDimx*maskDimx]; // edging
 void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i, int j, float mask[maskDimx*maskDimx]);
 
 // Define the files that are to be save and the reference images for validation
-const char *imageFilename = "image21/sharp/image21.pgm";
+const char *imageFilename = "mandrill/edge/mandrill.pgm";
 
  //load image from disk
  float *inputImg = NULL;
@@ -67,7 +67,7 @@ __global__ void globalConvolve(float *inIMG, float *outIMG, int *gParams){
                 // f is the value of the mask at given indices
                 float y, f;
                 y = (i-m+l) < 0 ? 0 : (j-m+p) < 0 ? 0 : (i-m+l)> (height-1) ? 0 : (j-m+p) > (width-1)? 0: inIMG[(i-m+l)*width + (j-m+p)];
-                f = sharp[l*DIMx + p];
+                f = edge[l*DIMx + p];
                 sum += (f*y) ;
             }
         }
@@ -94,7 +94,7 @@ __global__ void sharedConvolve(float *inputImg, float *outputImg, int *gParams){
     for(int p=0;p<DIMx;++p){
         for(int l=0;l<DIMx;++l){
 
-            float MASK = sharp[p*DIMx+l];
+            float MASK = edge[p*DIMx+l];
 
             if((i-m+p)<0){
                 sum = sum + 0; 
@@ -163,7 +163,7 @@ __global__ void texConvolve(float *outputImg,int *gParams){
                 sum = sum + 0;
             }
             else{
-                sum += tex2D(tex,j-m+l , i-m+p)*tex2D(tex_sharp,l,p);
+                sum += tex2D(tex,j-m+l , i-m+p)*tex2D(tex_edge,l,p);
             }
         }
     }
