@@ -22,7 +22,7 @@ float mask3[maskDimx*maskDimx]; // edging
 void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i, int j, float mask[maskDimx*maskDimx]);
 
 // Define the files that are to be save and the reference images for validation
-const char *imageFilename = "image21/averaging/image21.pgm";
+const char *imageFilename = "mandrill/averaging/mandrill.pgm";
 
  //load image from disk
  float *inputImg = NULL;
@@ -93,6 +93,9 @@ __global__ void sharedConvolve(float *inputImg, float *outputImg, int *gParams){
     __syncthreads();
     for(int p=0;p<DIMx;++p){
         for(int l=0;l<DIMx;++l){
+
+            float MASK = ave[p*DIMx+l];
+
             if((i-m+p)<0){
                 sum = sum + 0; 
             }
@@ -106,16 +109,16 @@ __global__ void sharedConvolve(float *inputImg, float *outputImg, int *gParams){
                 sum = sum + 0;
             }
             else if((threadIdx.x-m+l)<0){
-                sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*ave[p*DIMx+l];
+                sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*MASK;
             }
             else if((threadIdx.x-m+l)>=tileWidth){
-                sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*ave[p*DIMx+l];
+                sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*MASK;
             }
             else if((threadIdx.y-m+p)<0){
-                sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*ave[p*DIMx+l];
+                sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*MASK;
             }
             else if((threadIdx.y-m+p)>=tileWidth){
-                sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*ave[p*DIMx+l];
+                sum = sum + inputImg[(i-m+p)*width+(j-m+l)]*MASK;
             }
             else{
                 sum = sum + sharedMem[(threadIdx.x-m+l)][(threadIdx.y-m+p)]*ave[p*DIMx+l];
@@ -324,13 +327,13 @@ void Convolve(int argc, char **argv, float mask[maskDimx*maskDimx]){
 
     float sharp[9] = {-1,-1,-1,-1,9,-1,-1,-1,-1};
     float edge[9] = {-1,0,1,-2,0,2,-1,0,1};
-    // float av[9] = {1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9};
+    float av[9] = {1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9};
     sharpening = &sharp[0];
     edgeDectection = &edge[0];
-    // averaging=&av[0];
-    for(int i=0;i<maskDimx*maskDimx;++i){
-        averaging[i] = 1/9;
-    }
+    averaging = &av[0];
+    // for(int i=0;i<maskDimx*maskDimx;++i){
+    //     averaging[i] = 1/9;
+    // }
 
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(32, 0, 0, 0, cudaChannelFormatKindFloat);
     cudaChannelFormatDesc sharp_cd = cudaCreateChannelDesc(32, 0, 0, 0, cudaChannelFormatKindFloat);
