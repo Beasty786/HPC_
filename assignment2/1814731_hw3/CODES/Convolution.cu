@@ -9,7 +9,7 @@
 
 #define maskDimx 3 // Do not change this one, implementation here is handled differently
 #define tileWidth 8 // this will be used for the shared memory code
-#define maskChoice 4
+#define maskChoice 1
 
 // input and mask are globals for the serial code
 float mask1[maskDimx*maskDimx]; // averaging
@@ -23,7 +23,7 @@ float mask4[5*5];
 void maskingFunc(float *inputImg , float *outputImg, int rows , int cols , int i, int j, float mask[maskDimx*maskDimx]);
 
 // Define the files that are to be save and the reference images for validation
-const char *imageFilename = "highDim/mandrill.pgm";
+const char *imageFilename = "man/average/man.pgm";
 
  //load image from disk
  float *inputImg = NULL;
